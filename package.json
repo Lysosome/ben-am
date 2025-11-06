@@ -1,0 +1,30 @@
+{
+  "name": "ben-am",
+  "version": "1.0.0",
+  "description": "Alexa skill + web app that lets friends pick your wake-up music and record personalized DJ messages.",
+  "private": true,
+  "license": "MIT",
+  "author": "Your Name <your.email@example.com>",
+  "workspaces": [
+    "frontend",
+    "backend/alexa-skill",
+    "backend/api",
+    "backend/youtube-dl",
+    "infrastructure"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "build:frontend": "npm run build --workspace frontend",
+    "build:backend": "npm run build --workspace backend/alexa-skill && npm run build --workspace backend/api && npm run build --workspace backend/youtube-dl",
+    "lint": "eslint . --ext .ts,.tsx,.js",
+    "dev": "npm run dev --workspace frontend",
+    "deploy:infra": "cd infrastructure && terraform init && terraform apply -auto-approve",
+    "clean": "rm -rf node_modules */*/node_modules dist build",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "prettier": "^3.3.0",
+    "typescript": "^5.6.0"
+  }
+}
