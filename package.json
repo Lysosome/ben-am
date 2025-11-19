@@ -4,22 +4,16 @@
   "description": "Alexa skill + web app that lets friends pick your wake-up music and record personalized DJ messages.",
   "private": true,
   "license": "MIT",
-  "author": "Your Name <your.email@example.com>",
-  "workspaces": [
-    "frontend",
-    "backend/alexa-skill",
-    "backend/api",
-    "backend/youtube-dl",
-    "infrastructure"
-  ],
+  "author": "Ben Ma <ben@benma.dev>",
   "scripts": {
-    "build": "npm run build --workspaces",
-    "build:frontend": "npm run build --workspace frontend",
-    "build:backend": "npm run build --workspace backend/alexa-skill && npm run build --workspace backend/api && npm run build --workspace backend/youtube-dl",
+    "install:all": "cd backend/alexa-skill && npm install && cd ../api && npm install && cd ../youtube-dl && npm install && cd ../../frontend && npm install",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend/alexa-skill && npm run build && cd ../api && npm run build && cd ../youtube-dl && npm run build",
     "lint": "eslint . --ext .ts,.tsx,.js",
-    "dev": "npm run dev --workspace frontend",
-    "deploy:infra": "cd infrastructure && terraform init && terraform apply -auto-approve",
-    "clean": "rm -rf node_modules */*/node_modules dist build",
+    "dev": "cd frontend && npm run dev",
+    "deploy:infra": "cd infra && terraform init && terraform apply -auto-approve",
+    "clean": "rm -rf node_modules backend/*/node_modules frontend/node_modules infra/node_modules backend/*/dist frontend/dist frontend/build",
     "format": "prettier --write ."
   },
   "devDependencies": {

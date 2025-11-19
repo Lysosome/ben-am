@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Ben AM Local Development
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 30
+    Environment:
+      Variables:
+        TABLE_NAME: ben-am-calendar-staging
+        S3_BUCKET: ben-am-assets-staging-668596205778
+        SES_EMAIL_SENDER: chimera.recommender@gmail.com
+        AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
+        YOUTUBE_DL_LAMBDA_ARN: "arn:aws:lambda:us-east-1:668596205778:function:ben-am-staging-youtube-dl"
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,OPTIONS'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
+
+Resources:
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: backend/api/dist/index.handler
+      CodeUri: ./
+      Events:
+        GetCalendar:
+          Type: Api
+          Properties:
+            Path: /calendar
+            Method: GET
+        PostLockDate:
+          Type: Api
+          Properties:
+            Path: /lock-date
+            Method: POST
+        PostSubmitSong:
+          Type: Api
+          Properties:
+            Path: /submit-song
+            Method: POST
+        GetStatus:
+          Type: Api
+          Properties:
+            Path: /status/{id}
+            Method: GET
+        PostReviews:
+          Type: Api
+          Properties:
+            Path: /reviews
+            Method: POST
+        PostCancelSubmission:
+          Type: Api
+          Properties:
+            Path: /cancel-submission
+            Method: POST
+        PostUnlockDate:
+          Type: Api
+          Properties:
+            Path: /unlock-date
+            Method: POST
+
+  AlexaSkillFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: backend/alexa-skill/dist/index.handler
+      CodeUri: ./
+      Timeout: 60
+      Events:
+        AlexaTrigger:
+          Type: AlexaSkill
+          Properties:
+            # For local testing, skill ID verification is disabled
+            # In production, this is validated by Lambda permissions
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"

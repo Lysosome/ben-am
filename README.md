@@ -114,17 +114,118 @@ This provisions:
 
 ---
 
+## 🌍 Environments
+
+### Staging Environment
+The project uses Terraform workspaces to manage separate environments:
+
+- **Production**: `default` workspace (table: `ben-am-calendar`, bucket: `ben-am-assets`)
+- **Staging**: `staging` workspace (table: `ben-am-calendar-staging`, bucket: `ben-am-assets-staging-{account-id}`)
+
+**Switch to staging workspace:**
+```bash
+cd infra
+terraform workspace select staging
+terraform apply -var-file=terraform.staging.tfvars
+```
+
+**Action Items for New Deployments:**
+1. Create `infra/terraform.staging.tfvars` with staging-specific variables
+2. Build and upload Lambda layers (see Lambda Layers section below)
+3. Deploy infrastructure with staging tfvars file
+
+---
+
+## 📦 Lambda Layers
+
+The `youtube-dl` Lambda requires two binary layers for media processing:
+
+### yt-dlp Layer
+- **Purpose**: Download YouTube videos
+- **Current Version**: `yt-dlp-binary:2` (standalone Linux binary)
+- **Size**: ~34.5 MB
+- **Path**: `/opt/bin/yt-dlp`
+
+### ffmpeg Layer
+- **Purpose**: Audio conversion (YouTube → MP3) and thumbnail extraction
+- **Current Version**: `ffmpeg-binary:1` (static build)
+- **Size**: ~57 MB  
+- **Path**: `/opt/bin/ffmpeg`, `/opt/bin/ffprobe`
+
+### Building and Uploading Layers
+
+```bash
+cd lambda-layers
+
+# Build yt-dlp layer (downloads standalone binary)
+./build-yt-dlp-layer.sh
+aws lambda publish-layer-version \
+  --layer-name yt-dlp-binary \
+  --zip-file fileb://yt-dlp-layer.zip \
+  --compatible-runtimes nodejs20.x
+
+# Build ffmpeg layer (downloads static build)
+./build-ffmpeg-layer.sh
+aws lambda publish-layer-version \
+  --layer-name ffmpeg-binary \
+  --zip-file fileb://ffmpeg-layer.zip \
+  --compatible-runtimes nodejs20.x
+```
+
+**Action Items:**
+- Update `infra/lambda.tf` with the new layer ARNs (format: `arn:aws:lambda:REGION:ACCOUNT_ID:layer:NAME:VERSION`)
+- Re-run `terraform apply` to attach layers to the `youtube_dl` Lambda
+
+---
+
 ## 🧪 Testing Locally
 
-### Web App
+For detailed local development instructions, see [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md).
+
+### Quick Start - Frontend Only (Easiest)
 ```bash
 cd frontend
+echo 'VITE_API_URL=https://u47r2372d0.execute-api.us-east-1.amazonaws.com/default' > .env.local
 npm run dev
 ```
-Starts a local dev server (Vite) on [http://localhost:5173](http://localhost:5173).
+Starts frontend on [http://localhost:5173](http://localhost:5173) connected to deployed AWS backend.
 
-### Lambda Backend (Optional Local Simulation)
-Use [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/) or [LocalStack](https://localstack.cloud/) to emulate AWS services.
+### Full Local Development - Frontend + Backend
+
+**AWS SAM CLI (Requires Docker)**
+```bash
+# Build Lambda functions
+npm run build --workspace backend/api
+
+# Start local API Gateway (requires Docker running: `sudo systemctl start docker`)
+sam local start-api --port 3000
+
+# In another terminal, start frontend
+cd frontend
+echo 'VITE_API_URL=http://localhost:3000' > .env.local
+npm run dev
+```
+
+Frontend will be available at [http://localhost:5173](http://localhost:5173).
+
+### Monitoring Lambda Logs
+
+**Watch YouTube-DL Lambda logs (staging):**
+```bash
+aws logs tail /aws/lambda/ben-am-staging-youtube-dl --follow --region us-east-1
+```
+
+**Watch API Lambda logs (staging):**
+```bash
+aws logs tail /aws/lambda/ben-am-staging-api --follow --region us-east-1
+```
+
+**Watch Alexa Skill Lambda logs (staging):**
+```bash
+aws logs tail /aws/lambda/ben-am-staging-alexa-skill --follow --region us-east-1
+```
+
+For production logs, replace `-staging` with nothing in the function names.
 
 ---
 

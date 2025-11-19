@@ -1,0 +1,20 @@
+# Ignore built layer zip files
+*.zip
+
+# Ignore temporary build directories
+yt-dlp-layer/
+ffmpeg-layer/
+bin/
+nodejs/
+
+# Ignore downloaded binaries
+yt-dlp
+ffmpeg*
+
+# Sensitive authentication files
+cookies.txt
+*.cookies.txt
+
+# Keep build scripts and documentation
+!build-*.sh
+!README.md

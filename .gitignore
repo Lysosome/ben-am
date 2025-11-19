@@ -1,0 +1,5 @@
+node_modules/
+
+# Sensitive authentication files
+cookies.txt
+*.cookies.txt
