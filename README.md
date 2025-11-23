@@ -195,10 +195,10 @@ Starts frontend on [http://localhost:5173](http://localhost:5173) connected to d
 **AWS SAM CLI (Requires Docker)**
 ```bash
 # Build Lambda functions
-npm run build --workspace backend/api
+npm run build:backend
 
 # Start local API Gateway (requires Docker running: `sudo systemctl start docker`)
-sam local start-api --port 3000
+sam local start-api --template-file template.yaml
 
 # In another terminal, start frontend
 cd frontend

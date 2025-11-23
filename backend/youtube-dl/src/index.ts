@@ -75,8 +75,13 @@ export async function handler(event: YouTubeDownloadEvent): Promise<void> {
 
     // Calculate duration constraints
     const actualStartTime = clipStartTime || 0;
-    const actualEndTime = endTime || Math.min(videoInfo.duration, actualStartTime + maxDuration);
+    const videoDuration = videoInfo.duration || maxDuration; // Fallback to maxDuration if not available
+    const actualEndTime = endTime || Math.min(videoDuration, actualStartTime + maxDuration);
     const clipDuration = actualEndTime - actualStartTime;
+
+    if (clipDuration <= 0 || isNaN(clipDuration)) {
+      throw new Error(`Invalid clip duration calculated: ${clipDuration}s (start: ${actualStartTime}s, end: ${actualEndTime}s)`);
+    }
 
     if (clipDuration > maxDuration) {
       throw new Error(`Clip duration (${clipDuration}s) exceeds maximum (${maxDuration}s)`);

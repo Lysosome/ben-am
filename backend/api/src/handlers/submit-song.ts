@@ -280,7 +280,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       await lambdaClient.send(new InvokeCommand({
         FunctionName: YOUTUBE_DL_LAMBDA_ARN,
         InvocationType: 'Event', // Asynchronous
-        Payload: Buffer.from(JSON.stringify(youtubeDLPayload)),
+        Payload: JSON.stringify(youtubeDLPayload),
       }));
     } else {
       console.log('Skipping youtube-dl Lambda invocation (local dev mode)');

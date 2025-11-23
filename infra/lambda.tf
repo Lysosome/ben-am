@@ -136,11 +136,14 @@ resource "aws_lambda_function" "youtube_dl" {
   filename         = data.archive_file.youtube_dl_lambda.output_path
   source_code_hash = data.archive_file.youtube_dl_lambda.output_base64sha256
   
+  # Use customer-managed KMS key for environment variable encryption
+  kms_key_arn      = aws_kms_key.lambda_env_vars.arn
+  
   # Lambda layers for yt-dlp and ffmpeg binaries
   layers = [
     "arn:aws:lambda:us-east-1:668596205778:layer:yt-dlp-binary:2",
     "arn:aws:lambda:us-east-1:668596205778:layer:ffmpeg-binary:1",
-    "arn:aws:lambda:us-east-1:668596205778:layer:youtube-cookies:1"
+    "arn:aws:lambda:us-east-1:668596205778:layer:youtube-cookies:3"
   ]
 
   ephemeral_storage {
