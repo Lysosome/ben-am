@@ -212,14 +212,47 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     // If recorded DJ message, upload to S3
     if (djType === 'recorded' && djRecordingData) {
-      s3DJKey = `dj-messages/${date}/${jobId}.mp3`;
+      // Browser MediaRecorder typically produces WebM/Opus format, not MP3
+      // Save with .webm extension - the youtube-dl Lambda will convert it
+      s3DJKey = `dj-messages/${date}/${jobId}.webm`;
+      
+      // Parse the data URL to get the actual content type and base64 data
+      // Format can be: data:audio/webm;base64,XXX or data:audio/webm;codecs=opus;base64,XXX
+      let audioBuffer: Buffer;
+      let contentType = 'audio/webm';
+      
+      if (djRecordingData.startsWith('data:')) {
+        // Split on ;base64, to handle any number of parameters before it
+        const base64Marker = ';base64,';
+        const base64Index = djRecordingData.indexOf(base64Marker);
+        
+        if (base64Index !== -1) {
+          // Extract content type (everything between 'data:' and first ';')
+          const headerPart = djRecordingData.substring(5, base64Index); // Skip 'data:'
+          const firstSemicolon = headerPart.indexOf(';');
+          contentType = firstSemicolon !== -1 ? headerPart.substring(0, firstSemicolon) : headerPart;
+          
+          // Extract base64 data
+          const base64Data = djRecordingData.substring(base64Index + base64Marker.length);
+          audioBuffer = Buffer.from(base64Data, 'base64');
+          
+          console.log(`Parsed data URL - contentType: ${contentType}, base64 length: ${base64Data.length}, decoded size: ${audioBuffer.length}`);
+        } else {
+          console.error('Data URL missing ;base64, marker');
+          audioBuffer = Buffer.from(djRecordingData, 'base64');
+        }
+      } else {
+        audioBuffer = Buffer.from(djRecordingData, 'base64');
+      }
+      
+      console.log(`Uploading DJ recording: ${s3DJKey}, contentType: ${contentType}, size: ${audioBuffer.length} bytes`);
       
       try {
         await s3Client.send(new PutObjectCommand({
           Bucket: S3_BUCKET,
           Key: s3DJKey,
-          Body: Buffer.from(djRecordingData, 'base64'),
-          ContentType: 'audio/mpeg',
+          Body: audioBuffer,
+          ContentType: contentType,
         }));
       } catch (error) {
         console.error('Error uploading DJ recording:', error);

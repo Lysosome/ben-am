@@ -36,7 +36,7 @@ const DJMessageSetup = ({ onChange, initialPrefs }: DJMessageSetupProps) => {
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     // Notify parent of changes
@@ -80,7 +80,11 @@ const DJMessageSetup = ({ onChange, initialPrefs }: DJMessageSetupProps) => {
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/mpeg' });
+        // Use the actual MIME type from the MediaRecorder (usually webm/opus)
+        // Don't force audio/mpeg - the backend will convert it
+        const actualMimeType = mediaRecorder.mimeType || 'audio/webm';
+        console.log('Recording MIME type:', actualMimeType);
+        const blob = new Blob(audioChunksRef.current, { type: actualMimeType });
         setAudioBlob(blob);
         stream.getTracks().forEach((track) => track.stop());
       };
@@ -126,6 +130,10 @@ const DJMessageSetup = ({ onChange, initialPrefs }: DJMessageSetupProps) => {
 
   return (
     <Box>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        Your DJ message will be automatically appended to the end of the song, creating one seamless audio file.
+      </Typography>
+
       <ToggleButtonGroup
         value={djType}
         exclusive
@@ -162,13 +170,13 @@ const DJMessageSetup = ({ onChange, initialPrefs }: DJMessageSetupProps) => {
           value={djMessage}
           onChange={(e) => setDjMessage(e.target.value)}
           placeholder="Good morning! Time to wake up to..."
-          helperText="Leave blank for default message"
+          helperText="Leave blank for default message. Will be converted to speech using Amazon Polly."
           sx={{ mb: 2 }}
         />
       ) : (
         <Box sx={{ mb: 2 }}>
           <Typography variant="body2" color="text.secondary" gutterBottom>
-            Record a personal wake-up message (1-60 seconds)
+            Record a personal wake-up message (1-60 seconds). Your recording will play right after the song.
           </Typography>
 
           {error && (
@@ -226,11 +234,11 @@ const DJMessageSetup = ({ onChange, initialPrefs }: DJMessageSetupProps) => {
       <TextField
         fullWidth
         type="email"
-        label="Friend's Email (optional)"
+        label="Your Email (optional)"
         value={friendEmail}
         onChange={(e) => setFriendEmail(e.target.value)}
         placeholder="friend@example.com"
-        helperText="Enter email to allow them to leave a review"
+        helperText="Enter your email to receive a song review from Ben!"
       />
     </Box>
   );

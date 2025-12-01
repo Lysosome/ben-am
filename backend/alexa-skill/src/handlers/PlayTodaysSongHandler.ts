@@ -17,7 +17,8 @@ interface SongEntry {
   date: string;
   songTitle: string;
   youtubeURL: string;
-  s3SongKey: string;
+  s3SongKey: string; // Original song audio only
+  s3CombinedKey?: string; // Combined audio: song + DJ message + optional review prompt (Alexa plays this)
   thumbnailS3Key?: string;
   djName: string;
   djType: 'recorded' | 'tts';
@@ -29,6 +30,7 @@ interface SongEntry {
 /**
  * PlayTodaysSongHandler - Custom intent handler for playing today's song
  * Same functionality as LaunchRequest but triggered by voice commands
+ * Plays the combined audio file (song + DJ message + optional review prompt)
  */
 export const PlayTodaysSongHandler: RequestHandler = {
   canHandle(handlerInput: HandlerInput): boolean {
@@ -37,6 +39,7 @@ export const PlayTodaysSongHandler: RequestHandler = {
       && (request as IntentRequest).intent.name === 'PlayTodaysSongIntent';
   },
   async handle(handlerInput: HandlerInput): Promise<Response> {
+    console.log('=== PlayTodaysSongHandler called ===');
     try {
       // Get today's date
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
@@ -75,28 +78,44 @@ export const PlayTodaysSongHandler: RequestHandler = {
           .getResponse();
       }
 
-      // Generate pre-signed URL for the song (24 hour expiry)
+      // Check if song has been processed - prefer s3CombinedKey, fallback to s3SongKey
+      const audioKey = song.s3CombinedKey || song.s3SongKey;
+      if (!audioKey) {
+        return handlerInput.responseBuilder
+          .speak('Your wake up song is still being processed. Please try again in a few minutes.')
+          .withShouldEndSession(true)
+          .getResponse();
+      }
+
+      console.log('Playing audio file:', audioKey);
+      console.log('Using s3CombinedKey:', !!song.s3CombinedKey);
+
+      // Generate pre-signed URL for the combined audio file (24 hour expiry)
       const songUrl = await getSignedUrl(
         s3Client,
         new GetObjectCommand({
           Bucket: S3_BUCKET,
-          Key: song.s3SongKey,
+          Key: audioKey,
         }),
         { expiresIn: 86400 } // 24 hours
       );
 
-      // Store song info in session for later use
-      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-      sessionAttributes.currentSong = song;
-      handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+      // Encode song data in token for AudioPlayer events
+      const songToken = JSON.stringify({
+        type: 'combined-audio',
+        date: song.date,
+        songTitle: song.songTitle,
+        djName: song.djName,
+        friendEmail: song.friendEmail
+      });
 
-      // Play the song using AudioPlayer
+      // Play the combined audio using AudioPlayer (better quality than SSML <audio>)
       return handlerInput.responseBuilder
         .speak(`Here's your wake up song: ${song.songTitle} from ${song.djName}`)
         .addAudioPlayerPlayDirective(
           'REPLACE_ALL',
           songUrl,
-          song.date, // Token for tracking
+          songToken,
           0, // Offset
           undefined // Expected previous token
         )

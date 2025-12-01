@@ -8,11 +8,24 @@ export interface SongEntry {
   songTitle: string;
   youtubeURL: string;
   videoId: string; // YouTube video ID for duplicate detection
+  /** S3 key for the original song audio (just the YouTube download, trimmed). */
   s3SongKey: string;
+  /**
+   * S3 key for the combined audio file (song + DJ message + optional review prompt).
+   * The youtube-dl Lambda creates this by:
+   * 1. Downloading/trimming the YouTube audio → s3SongKey
+   * 2. Generating TTS or downloading recorded DJ message
+   * 3. Optionally generating review prompt TTS (if friendEmail provided)
+   * 4. Concatenating all audio files with ffmpeg → s3CombinedKey
+   * 
+   * Alexa plays from s3CombinedKey, not s3SongKey.
+   */
+  s3CombinedKey: string;
   thumbnailS3Key?: string;
   djName: string;
   djType: 'recorded' | 'tts';
   djMessage: string;
+  /** S3 key for the original DJ recording (if djType === 'recorded'). Used during processing. */
   s3DJKey?: string;
   friendEmail?: string;
   submittedBy: string; // Cookie-based user ID
@@ -37,6 +50,7 @@ export interface ProcessingStatus {
   error?: string;
   result?: {
     s3SongKey: string;
+    s3CombinedKey: string;
     thumbnailS3Key: string;
     duration: number;
   };
@@ -106,6 +120,7 @@ export interface YouTubeDownloadJob {
 export interface YouTubeDownloadResult {
   success: boolean;
   s3SongKey?: string;
+  s3CombinedKey?: string;
   thumbnailS3Key?: string;
   duration?: number;
   error?: string;

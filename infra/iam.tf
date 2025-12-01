@@ -208,17 +208,37 @@ resource "aws_iam_role_policy" "youtube_dl_lambda" {
         ]
         Resource = [
           "${aws_s3_bucket.assets.arn}/songs/*",
+          "${aws_s3_bucket.assets.arn}/combined/*",
           "${aws_s3_bucket.assets.arn}/thumbnails/*",
           "${aws_s3_bucket.assets.arn}/temp/*"
+        ]
+      },
+      # Read DJ recordings from S3 (for combining with song)
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject"
+        ]
+        Resource = [
+          "${aws_s3_bucket.assets.arn}/dj-messages/*"
         ]
       },
       # Update DynamoDB with processing status
       {
         Effect = "Allow"
         Action = [
-          "dynamodb:UpdateItem"
+          "dynamodb:UpdateItem",
+          "dynamodb:GetItem"
         ]
         Resource = aws_dynamodb_table.calendar.arn
+      },
+      # Amazon Polly for TTS generation
+      {
+        Effect = "Allow"
+        Action = [
+          "polly:SynthesizeSpeech"
+        ]
+        Resource = "*"
       },
       # CloudWatch Logs
       {

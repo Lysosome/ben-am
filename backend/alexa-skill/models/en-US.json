@@ -1,0 +1,90 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "ben a. m.",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.PauseIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.ResumeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NextIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.YesIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NoIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
+        {
+          "name": "PlayTodaysSongIntent",
+          "slots": [],
+          "samples": [
+            "play today's song",
+            "play my wake up song",
+            "play the song",
+            "start the alarm",
+            "wake me up",
+            "play my song",
+            "start"
+          ]
+        },
+        {
+          "name": "LeaveReviewIntent",
+          "slots": [],
+          "samples": [
+            "leave a review",
+            "leave review",
+            "leave a message",
+            "send a review",
+            "review",
+            "give feedback",
+            "send feedback",
+            "leave feedback"
+          ]
+        },
+        {
+          "name": "CaptureReviewIntent",
+          "slots": [
+            {
+              "name": "reviewText",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "my review is {reviewText}",
+            "I think {reviewText}",
+            "I thought {reviewText}",
+            "it was {reviewText}",
+            "the song was {reviewText}",
+            "{reviewText} is my review"
+          ]
+        }
+      ],
+      "types": []
+    }
+  }
+}

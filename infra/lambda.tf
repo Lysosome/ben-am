@@ -143,7 +143,7 @@ resource "aws_lambda_function" "youtube_dl" {
   layers = [
     "arn:aws:lambda:us-east-1:668596205778:layer:yt-dlp-binary:2",
     "arn:aws:lambda:us-east-1:668596205778:layer:ffmpeg-binary:1",
-    "arn:aws:lambda:us-east-1:668596205778:layer:youtube-cookies:3"
+    "arn:aws:lambda:us-east-1:668596205778:layer:youtube-cookies:4"
   ]
 
   ephemeral_storage {

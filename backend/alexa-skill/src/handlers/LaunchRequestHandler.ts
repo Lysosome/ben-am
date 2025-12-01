@@ -17,7 +17,8 @@ interface SongEntry {
   date: string;
   songTitle: string;
   youtubeURL: string;
-  s3SongKey: string;
+  s3SongKey: string; // Original song audio only
+  s3CombinedKey?: string; // Combined audio: song + DJ message + optional review prompt (Alexa plays this)
   thumbnailS3Key?: string;
   djName: string;
   djType: 'recorded' | 'tts';
@@ -28,16 +29,19 @@ interface SongEntry {
 
 /**
  * LaunchRequestHandler - Triggered when Alexa Routine starts the skill
- * Fetches today's song and starts playback
+ * Fetches today's song and starts playback of the combined audio file
+ * (song + DJ message + optional review prompt all in one MP3)
  */
 export const LaunchRequestHandler: RequestHandler = {
   canHandle(handlerInput: HandlerInput): boolean {
     return handlerInput.requestEnvelope.request.type === 'LaunchRequest';
   },
   async handle(handlerInput: HandlerInput): Promise<Response> {
+    console.log('=== LaunchRequestHandler called ===');
     try {
       // Get today's date
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      console.log('Today\'s date:', today);
       
       // Fetch song for today
       const result = await docClient.send(new QueryCommand({
@@ -49,9 +53,15 @@ export const LaunchRequestHandler: RequestHandler = {
       }));
 
       let song: SongEntry | undefined = result.Items?.[0] as SongEntry;
+      console.log('Query result items count:', result.Items?.length || 0);
+      console.log('Song found:', song ? 'YES' : 'NO');
+      if (song) {
+        console.log('Song details:', JSON.stringify(song, null, 2));
+      }
 
       // If no song for today, pick a random past entry
       if (!song) {
+        console.log('No song for today, scanning for past songs...');
         const scanResult = await docClient.send(new ScanCommand({
           TableName: TABLE_NAME,
           FilterExpression: 'begins_with(PK, :prefix)',
@@ -73,29 +83,48 @@ export const LaunchRequestHandler: RequestHandler = {
           .getResponse();
       }
 
-      // Generate pre-signed URL for the song (24 hour expiry)
+      // Check if song has been processed - prefer s3CombinedKey, fallback to s3SongKey
+      const audioKey = song.s3CombinedKey || song.s3SongKey;
+      if (!audioKey) {
+        return handlerInput.responseBuilder
+          .speak('Your wake up song is still being processed. Please try again in a few minutes.')
+          .withShouldEndSession(true)
+          .getResponse();
+      }
+
+      console.log('Playing audio file:', audioKey);
+      console.log('Using s3CombinedKey:', !!song.s3CombinedKey);
+
+      // Generate pre-signed URL for the combined audio file (24 hour expiry)
       const songUrl = await getSignedUrl(
         s3Client,
         new GetObjectCommand({
           Bucket: S3_BUCKET,
-          Key: song.s3SongKey,
+          Key: audioKey,
         }),
         { expiresIn: 86400 } // 24 hours
       );
+      
+      console.log('Pre-signed song URL generated');
 
-      // Store song info in session for later use
-      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-      sessionAttributes.currentSong = song;
-      handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+      // Encode song data in token for potential use in AudioPlayer events
+      const songToken = JSON.stringify({
+        type: 'combined-audio',
+        date: song.date,
+        songTitle: song.songTitle,
+        djName: song.djName,
+        friendEmail: song.friendEmail
+      });
 
-      // Play the song using AudioPlayer
+      // Use AudioPlayer to play the combined MP3 (song + DJ message + review prompt)
+      // This provides better audio quality than SSML <audio> tags
       return handlerInput.responseBuilder
-        .speak(`Good morning! Here's your wake up song: ${song.songTitle} from ${song.djName}`)
+        .speak(`Good morning! Here's your wake up song.`)
         .addAudioPlayerPlayDirective(
           'REPLACE_ALL',
           songUrl,
-          song.date, // Token for tracking
-          0, // Offset
+          songToken,
+          0, // Offset - start from beginning
           undefined // Expected previous token
         )
         .withShouldEndSession(true)
