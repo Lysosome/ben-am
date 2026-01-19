@@ -150,7 +150,7 @@ const SongSetupPage = () => {
       alert('Song duration cannot exceed 10 minutes');
       return;
     }
-    setSongData({ ...songData, startTime: start, endTime: end });
+    setSongData(prev => ({ ...prev, startTime: start, endTime: end }));
   };
 
   const handleSubmit = () => {
