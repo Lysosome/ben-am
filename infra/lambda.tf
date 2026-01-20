@@ -141,9 +141,9 @@ resource "aws_lambda_function" "youtube_dl" {
   
   # Lambda layers for yt-dlp and ffmpeg binaries
   layers = [
-    "arn:aws:lambda:us-east-1:668596205778:layer:yt-dlp-binary:2",
+    "arn:aws:lambda:us-east-1:668596205778:layer:yt-dlp-binary:4",
     "arn:aws:lambda:us-east-1:668596205778:layer:ffmpeg-binary:1",
-    "arn:aws:lambda:us-east-1:668596205778:layer:youtube-cookies:4"
+    "arn:aws:lambda:us-east-1:668596205778:layer:youtube-cookies:7"
   ]
 
   ephemeral_storage {
@@ -156,6 +156,8 @@ resource "aws_lambda_function" "youtube_dl" {
       TABLE_NAME               = local.table_name
       MAX_SONG_DURATION_SECONDS = var.max_song_duration_seconds
       AWS_NODEJS_CONNECTION_REUSE_ENABLED = "1"
+      # Tell yt-dlp to use Node.js for n-challenge solving (already available in Lambda runtime)
+      PATH = "/var/lang/bin:/usr/local/bin:/usr/bin/:/bin:/opt/bin"
     }
   }
 

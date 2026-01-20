@@ -31,11 +31,11 @@ It seems from [this thread](https://github.com/yt-dlp/yt-dlp/issues/12475) that 
 
 First, export your YouTube cookies from your browser:
 
-1. Install a browser extension to export cookies:
+1. Install a browser extension to export cookies (make sure you have enabled it in extension settings to be available in incognito mode):
    - Chrome/Edge: [Get cookies.txt LOCALLY](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc)
    - Firefox: [cookies.txt](https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/)
 
-2. Sign in to YouTube in your browser
+2. Open an incognito tab, sign in to YouTube in your browser, then go to https://www.youtube.com/robots.txt
 
 3. Use the extension to export cookies in Netscape format
 

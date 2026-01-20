@@ -678,6 +678,7 @@ async function getVideoInfo(url: string): Promise<{ title: string; duration: num
       '--dump-json',
       '--no-playlist',
       '--cookies', COOKIES_FILE,
+      '--js-runtimes', 'node',
       url,
     ]);
 
@@ -723,6 +724,7 @@ async function downloadAudio(url: string, outputFile: string, startTime: number,
       '--audio-quality', '192K',
       '--no-playlist',
       '--cookies', COOKIES_FILE,
+      '--js-runtimes', 'node',
       '--output', outputFile.replace('.mp3', '.%(ext)s'),
     ];
 
@@ -768,6 +770,7 @@ async function downloadThumbnail(url: string, outputFile: string): Promise<void>
       '--convert-thumbnails', 'jpg',
       '--no-playlist',
       '--cookies', COOKIES_FILE,
+      '--js-runtimes', 'node',
       '--output', outputFile.replace('.jpg', '.%(ext)s'),
       url,
     ]);
