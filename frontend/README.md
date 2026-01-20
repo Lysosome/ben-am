@@ -25,7 +25,8 @@ src/
 ├── pages/
 │   ├── CalendarPage.tsx   # Main calendar view
 │   ├── SongSetupPage.tsx  # Song submission flow
-│   └── ConfirmationPage.tsx # Processing status and confirmation
+│   ├── ConfirmationPage.tsx # Processing status and confirmation
+│   └── AdminPage.tsx      # Admin controls for calendar management
 ├── utils/
 │   └── user.ts            # User cookie management
 ├── App.tsx                # Root component with routing
@@ -120,15 +121,30 @@ aws cloudfront create-invalidation \
 - Success/failure feedback
 - Navigation back to calendar
 
+### Admin Page (`/admin`)
+- **Block dates**: Mark future dates as unavailable for submissions
+- **Unblock dates**: Remove blocks from previously blocked dates
+- **Move songs**: Transfer a song from one date to another available date
+- **Delete songs**: Permanently remove songs and associated S3 files
+- View all occupied dates and their status
+- Future-date-only editing (past dates cannot be modified)
+
 ## API Integration
 
 The frontend communicates with the backend API through the following endpoints:
 
+### Public Endpoints
 - `GET /calendar` - Fetch all calendar entries
 - `POST /lock-date` - Lock a date for 15 minutes
 - `POST /submit-song` - Submit song with YouTube URL and DJ message
 - `GET /status/:jobId` - Poll processing status
 - `POST /reviews` - Submit voice review
+
+### Admin Endpoints
+- `POST /admin/block-date` - Block a date from submissions
+- `DELETE /admin/unblock-date` - Unblock a previously blocked date
+- `PUT /admin/move-song` - Move a song to a different date
+- `DELETE /admin/delete-song` - Delete a song and its S3 files
 
 See `src/api/client.ts` for TypeScript types and API functions.
 

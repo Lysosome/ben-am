@@ -113,3 +113,26 @@ export const calendarApi = {
     return response.data;
   },
 };
+
+// Admin API Functions
+export const adminApi = {
+  blockDate: async (date: string, reason?: string): Promise<{ success: boolean; message?: string; error?: string }> => {
+    const response = await apiClient.post('/admin/block-date', { date, reason });
+    return response.data;
+  },
+
+  unblockDate: async (date: string): Promise<{ success: boolean; message?: string; error?: string }> => {
+    const response = await apiClient.delete('/admin/unblock-date', { data: { date } });
+    return response.data;
+  },
+
+  moveSong: async (fromDate: string, toDate: string): Promise<{ success: boolean; message?: string; error?: string }> => {
+    const response = await apiClient.put('/admin/move-song', { fromDate, toDate });
+    return response.data;
+  },
+
+  deleteSong: async (date: string): Promise<{ success: boolean; message?: string; error?: string }> => {
+    const response = await apiClient.delete('/admin/delete-song', { data: { date } });
+    return response.data;
+  },
+};

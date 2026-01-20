@@ -5,6 +5,7 @@ import { theme } from './theme';
 import CalendarPage from './pages/CalendarPage';
 import SongSetupPage from './pages/SongSetupPage';
 import ConfirmationPage from './pages/ConfirmationPage';
+import AdminPage from './pages/AdminPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,6 +26,7 @@ function App() {
             <Route path="/" element={<CalendarPage />} />
             <Route path="/song-setup/:date" element={<SongSetupPage />} />
             <Route path="/confirmation" element={<ConfirmationPage />} />
+            <Route path="/admin" element={<AdminPage />} />
           </Routes>
         </BrowserRouter>
       </ThemeProvider>

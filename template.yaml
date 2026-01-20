@@ -15,7 +15,7 @@ Globals:
         YOUTUBE_DL_LAMBDA_ARN: "arn:aws:lambda:us-east-1:668596205778:function:ben-am-staging-youtube-dl"
   Api:
     Cors:
-      AllowMethods: "'GET,POST,OPTIONS'"
+      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
       AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
       AllowOrigin: "'*'"
 
@@ -61,6 +61,27 @@ Resources:
           Properties:
             Path: /unlock-date
             Method: POST
+        # Admin routes
+        PostAdminBlockDate:
+          Type: Api
+          Properties:
+            Path: /admin/block-date
+            Method: POST
+        DeleteAdminUnblockDate:
+          Type: Api
+          Properties:
+            Path: /admin/unblock-date
+            Method: DELETE
+        PutAdminMoveSong:
+          Type: Api
+          Properties:
+            Path: /admin/move-song
+            Method: PUT
+        DeleteAdminDeleteSong:
+          Type: Api
+          Properties:
+            Path: /admin/delete-song
+            Method: DELETE
 
   AlexaSkillFunction:
     Type: AWS::Serverless::Function

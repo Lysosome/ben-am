@@ -14,7 +14,7 @@ backend/
 │   └── package.json
 ├── api/               # REST API Lambda
 │   ├── src/
-│   │   ├── handlers/  # calendar, lock-date, submit-song, status, reviews
+│   │   ├── handlers/  # calendar, lock-date, submit-song, status, reviews, admin
 │   │   ├── types/     # TypeScript interfaces
 │   │   └── index.ts   # API router
 │   ├── dist/          # Compiled JavaScript
@@ -86,6 +86,10 @@ Routes requests to appropriate handlers based on path/method.
 | `/submit-song` | POST | `submit-song.ts` | Submit song & trigger processing |
 | `/status/{id}` | GET | `status.ts` | Poll job status |
 | `/reviews` | POST | `reviews.ts` | Upload review audio & email friend |
+| `/admin/block-date` | POST | `admin.ts` | Block a date from submissions |
+| `/admin/unblock-date` | DELETE | `admin.ts` | Unblock a previously blocked date |
+| `/admin/move-song` | PUT | `admin.ts` | Move song to different date |
+| `/admin/delete-song` | DELETE | `admin.ts` | Delete song and S3 files |
 
 ### Key Features
 
@@ -93,6 +97,30 @@ Routes requests to appropriate handlers based on path/method.
 - **Validation**: Enforces date format, duration limits, lock ownership
 - **Async Processing**: Invokes youtube-dl Lambda, returns immediately
 - **CORS Support**: Handles OPTIONS preflight requests
+- **Admin Controls**: Block/unblock dates, move/delete songs with S3 asset management
+
+### Admin Operations
+
+The `admin.ts` handler provides administrative controls for calendar management:
+
+**Block Date**: Creates a placeholder entry with `processingStatus: 'blocked'` to prevent user submissions. Useful for holidays or special events.
+
+**Unblock Date**: Removes blocked placeholder entries to make dates available again. Only works on blocked dates (not real songs).
+
+**Move Song**: Transfers a song from one date to another:
+- Validates source and target dates
+- Copies all S3 assets (song, combined audio, thumbnail, DJ recording) to new date-prefixed keys
+- Updates DynamoDB entry with new date
+- Deletes old S3 assets and DynamoDB entry
+- Only works for future dates
+
+**Delete Song**: Permanently removes a song:
+- Deletes all associated S3 files (song, combined, thumbnail, DJ recording)
+- Removes DynamoDB entry
+- Cannot be undone
+- Only works for future dates
+
+All admin operations include proper validation and error handling.
 
 ### Environment Variables
 

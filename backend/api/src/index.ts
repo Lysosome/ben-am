@@ -6,6 +6,7 @@ import { handler as submitSongHandler } from './handlers/submit-song';
 import { handler as statusHandler } from './handlers/status';
 import { handler as reviewsHandler } from './handlers/reviews';
 import { handler as cancelSubmissionHandler } from './handlers/cancel-submission';
+import { handler as adminHandler } from './handlers/admin';
 
 /**
  * Main entry point for Ben AM API Lambda
@@ -23,6 +24,24 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
   const method = event.httpMethod;
 
   try {
+    // Handle OPTIONS for CORS preflight FIRST (before routing)
+    if (method === 'OPTIONS') {
+      return {
+        statusCode: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+        },
+        body: '',
+      };
+    }
+
+    // Admin routes
+    if (path.startsWith('/admin/')) {
+      return await adminHandler(event);
+    }
+
     // Route to appropriate handler
     if (path === '/calendar' && method === 'GET') {
       return await calendarHandler(event);
@@ -50,19 +69,6 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     if (path === '/cancel-submission' && method === 'POST') {
       return await cancelSubmissionHandler(event);
-    }
-
-    // Handle OPTIONS for CORS preflight
-    if (method === 'OPTIONS') {
-      return {
-        statusCode: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-        },
-        body: '',
-      };
     }
 
     // No matching route

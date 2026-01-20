@@ -14,7 +14,11 @@ Built with React, TypeScript, Node.js, and AWS serverless infrastructure.
 - Customize a “DJ message” (either a TTS message or a recorded clip).
 - Optionally request feedback that will be recorded through Alexa.
 - Trigger playback automatically each morning via an Alexa Routine.
-
+Administrators can manage the calendar through the `/admin` page, including:
+- Blocking dates to prevent submissions (e.g., holidays, special events)
+- Unblocking previously blocked dates
+- Moving songs to different dates
+- Deleting songs from the calendar
 When the skill runs each morning, Alexa fetches the day’s song and DJ message from AWS, plays the song, and follows it up with the DJ announcement.
 
 ---
@@ -257,6 +261,7 @@ Serverless REST endpoints for the web app:
 - Calendar management
 - Song submissions
 - Review uploads
+- Admin operations (block/unblock dates, move/delete songs)
 
 ### `/backend/youtube-dl`
 Lambda for downloading YouTube music clips and converting to MP3.
