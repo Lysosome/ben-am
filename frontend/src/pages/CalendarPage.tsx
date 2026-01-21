@@ -22,7 +22,9 @@ const CalendarPage = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['calendar'],
     queryFn: calendarApi.getCalendar,
-    refetchInterval: 30000, // Refresh every 30 seconds to see new locks
+    refetchInterval: 5000, // Refresh every 5 seconds
+    refetchIntervalInBackground: false, // Stop refetching when tab is not visible
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
   });
 
   const handleDateClick = (date: string, isAvailable: boolean, isLocked: boolean) => {

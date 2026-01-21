@@ -67,7 +67,37 @@ const SongSetupPage = () => {
     };
 
     lockDate();
-  }, [date, userId]);
+
+    // Cleanup: unlock date when component unmounts (e.g., browser back button)
+    return () => {
+      if (date && !lockError) {
+        // Don't await - fire and forget on unmount
+        calendarApi.unlockDate(date, userId).catch((err) => {
+          console.error('Failed to unlock date on unmount:', err);
+        });
+      }
+    };
+  }, [date, userId, lockError]);
+
+  // Handle browser navigation events (back/forward buttons, tab close)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Synchronous unlock attempt for page unload
+      if (date && !lockError) {
+        // Use sendBeacon for reliable fire-and-forget on page unload
+        const apiBaseUrl = import.meta.env.VITE_API_URL || '/api';
+        const url = `${apiBaseUrl}/unlock-date`;
+        const blob = new Blob([JSON.stringify({ date, userId })], { type: 'application/json' });
+        navigator.sendBeacon(url, blob);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [date, userId, lockError]);
 
   const submitMutation = useMutation({
     mutationFn: async (data: SubmitSongRequest) => {
