@@ -130,10 +130,6 @@ const DJMessageSetup = ({ onChange, initialPrefs }: DJMessageSetupProps) => {
 
   return (
     <Box>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Your DJ message will be automatically appended to the end of the song, creating one seamless audio file.
-      </Typography>
-
       <ToggleButtonGroup
         value={djType}
         exclusive
@@ -143,18 +139,18 @@ const DJMessageSetup = ({ onChange, initialPrefs }: DJMessageSetupProps) => {
       >
         <ToggleButton value="tts">
           <TextFields sx={{ mr: 1 }} />
-          Text-to-Speech
+          Text-to-speech
         </ToggleButton>
         <ToggleButton value="recorded">
           <Mic sx={{ mr: 1 }} />
-          Record Message
+          Record audio
         </ToggleButton>
       </ToggleButtonGroup>
 
       <TextField
         fullWidth
         required
-        label="DJ Name"
+        label="DJ name"
         value={djName}
         onChange={(e) => setDjName(e.target.value)}
         placeholder="Your name"
@@ -166,33 +162,28 @@ const DJMessageSetup = ({ onChange, initialPrefs }: DJMessageSetupProps) => {
           fullWidth
           multiline
           rows={3}
-          label="DJ Message (optional)"
+          label="DJ message (optional)"
           value={djMessage}
           onChange={(e) => setDjMessage(e.target.value)}
           placeholder="Good morning! Time to wake up to..."
-          helperText="Leave blank for default message. Will be converted to speech using Amazon Polly."
           sx={{ mb: 2 }}
         />
       ) : (
         <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            Record a personal wake-up message (1-60 seconds). Your recording will play right after the song.
-          </Typography>
-
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
             </Alert>
           )}
 
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 4 }}>
             {!isRecording && !audioBlob && (
               <Button
-                variant="contained"
+                variant="outlined"
                 startIcon={<Mic />}
                 onClick={startRecording}
               >
-                Start Recording
+                Start recording
               </Button>
             )}
 
@@ -204,7 +195,7 @@ const DJMessageSetup = ({ onChange, initialPrefs }: DJMessageSetupProps) => {
                   startIcon={<Stop />}
                   onClick={stopRecording}
                 >
-                  Stop Recording
+                  Stop recording
                 </Button>
                 <Typography variant="body2">
                   {recordingDuration}s / 60s
@@ -234,11 +225,11 @@ const DJMessageSetup = ({ onChange, initialPrefs }: DJMessageSetupProps) => {
       <TextField
         fullWidth
         type="email"
-        label="Your Email (optional)"
+        label="Your email (optional)"
         value={friendEmail}
         onChange={(e) => setFriendEmail(e.target.value)}
         placeholder="friend@example.com"
-        helperText="Enter your email to receive a song review from Ben!"
+        helperText="<CONTEXT> Enter your email to receive a song review from Ben"
       />
     </Box>
   );

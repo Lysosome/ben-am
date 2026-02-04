@@ -26,6 +26,8 @@ export interface CalendarEntry {
   date: string;
   songTitle: string;
   thumbnailURL?: string;
+  /** ASCII art representation of the thumbnail */
+  asciiThumbnail?: string;
   djName: string;
   isAvailable: boolean;
   isLocked?: boolean;

@@ -6,15 +6,18 @@ import {
   Grid,
   Card,
   CardContent,
-  CardMedia,
   Typography,
   CircularProgress,
   Alert,
   Chip,
 } from '@mui/material';
-import { Lock, MusicNote } from '@mui/icons-material';
+import logo from '../img/logo_bg_anim.gif';
+import { Lock } from '@mui/icons-material';
 import { calendarApi } from '../api/client';
 import type { CalendarEntry } from '../api/client';
+import { formatBenAMDate } from '../utils/dateFormat';
+import { AsciiArtDisplay } from '../components/AsciiArtDisplay';
+import { MUSIC_NOTE_ASCII, LOCK_ASCII } from '../constants/asciiArt';
 
 const CalendarPage = () => {
   const navigate = useNavigate();
@@ -70,12 +73,12 @@ const CalendarPage = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ mb: 4, textAlign: 'center' }}>
-        <Typography variant="h3" component="h1" gutterBottom>
-          Ben AM Wake-Up Calendar
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Pick a date to add your morning song
-        </Typography>
+        <Box
+          component="img"
+          src={logo}
+          alt="Logo"
+          sx={{ mt: 2, width: 300 }}
+        />
       </Box>
 
       <Grid container spacing={3}>
@@ -91,8 +94,8 @@ const CalendarPage = () => {
             <Grid item xs={12} sm={6} md={4} key={dateString}>
               <Card
                 sx={{
+                  height: '17.5em',
                   cursor: isClickable ? 'pointer' : 'default',
-                  opacity: isAvailable ? 1 : 0.6,
                   transition: 'transform 0.2s, box-shadow 0.2s',
                   '&:hover': isClickable
                     ? {
@@ -103,53 +106,42 @@ const CalendarPage = () => {
                 }}
                 onClick={() => handleDateClick(dateString, isAvailable, isLocked)}
               >
-                {entry?.thumbnailURL ? (
-                  <CardMedia
-                    component="img"
-                    height="180"
-                    image={entry.thumbnailURL}
-                    alt={entry.songTitle}
-                  />
-                ) : (
-                  <Box
-                    sx={{
-                      height: 180,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      bgcolor: 'grey.800',
-                    }}
-                  >
-                    {isAvailable ? (
-                      <MusicNote sx={{ fontSize: 60, color: 'grey.600' }} />
-                    ) : (
-                      <Lock sx={{ fontSize: 60, color: 'grey.600' }} />
-                    )}
-                  </Box>
-                )}
+                <AsciiArtDisplay
+                  asciiArt={entry?.asciiThumbnail || (isAvailable ? MUSIC_NOTE_ASCII : LOCK_ASCII)}
+                  alt={entry?.songTitle || (isAvailable ? 'Available slot' : 'Locked slot')}
+                  charactersPerLine={60}
+                  pixelWidth={330}
+                  enableMatrixRipple={entry?.asciiThumbnail ? true : false}
+                  enableHoverEffect={true}
+                  textColor={!entry?.asciiThumbnail ? '#E0A0A0' : undefined}
+                  disableBackground={!entry?.asciiThumbnail}
+                />
 
                 <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {date.toLocaleDateString('en-US', {
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
+                  <Typography variant="h6" color="text.secondary" gutterBottom>
+                    {formatBenAMDate(date)}
                   </Typography>
 
                   {!isAvailable && entry && (
                     <>
-                      <Typography variant="body2" color="text.secondary" noWrap>
+                      <Typography variant="body1" color="text.secondary" sx={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}>
                         {entry.songTitle}
                       </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        display="block"
-                        sx={{ mt: 0.5 }}
-                      >
-                        DJ: {entry.djName}
-                      </Typography>
+                      { entry.djName && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                          sx={{ mt: 0.5 }}
+                        >
+                          DJ: {entry.djName}
+                        </Typography>
+                      )}
                     </>
                   )}
 

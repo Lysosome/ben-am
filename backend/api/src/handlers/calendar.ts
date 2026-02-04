@@ -16,6 +16,7 @@ interface SongEntry {
   date: string;
   songTitle: string;
   thumbnailS3Key?: string;
+  asciiThumbnail?: string;
   djName: string;
 }
 
@@ -29,6 +30,7 @@ interface CalendarEntry {
   date: string;
   songTitle: string;
   thumbnailURL?: string;
+  asciiThumbnail?: string;
   djName: string;
   isAvailable: boolean;
   isLocked?: boolean;
@@ -96,6 +98,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
         date: song.date,
         songTitle: song.songTitle,
         thumbnailURL,
+        asciiThumbnail: song.asciiThumbnail,
         djName: song.djName,
         isAvailable: false,
       });

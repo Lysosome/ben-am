@@ -27,18 +27,11 @@ data "archive_file" "api_lambda" {
   ]
 }
 
+# YouTube-DL Lambda uses esbuild bundling - only include the dist folder
 data "archive_file" "youtube_dl_lambda" {
   type        = "zip"
-  source_dir  = "${path.module}/../backend/youtube-dl"
+  source_dir  = "${path.module}/../backend/youtube-dl/dist"
   output_path = "${path.module}/.terraform/lambda-packages/youtube-dl.zip"
-  
-  excludes = [
-    "src",
-    "*.ts",
-    "tsconfig.json",
-    ".gitignore",
-    "README.md",
-  ]
 }
 
 # Lambda function for Alexa Skill
@@ -129,7 +122,7 @@ resource "aws_cloudwatch_log_group" "api" {
 resource "aws_lambda_function" "youtube_dl" {
   function_name    = "${local.resource_prefix}-youtube-dl"
   role             = aws_iam_role.youtube_dl_lambda.arn
-  handler          = "dist/index.handler"
+  handler          = "index.handler"
   runtime          = var.lambda_runtime
   timeout          = var.youtube_dl_timeout
   memory_size      = 2048 # Higher memory for video processing
@@ -139,11 +132,12 @@ resource "aws_lambda_function" "youtube_dl" {
   # Use customer-managed KMS key for environment variable encryption
   kms_key_arn      = aws_kms_key.lambda_env_vars.arn
   
-  # Lambda layers for yt-dlp and ffmpeg binaries
+  # Lambda layers for yt-dlp, ffmpeg, cookies, and ascii-image-converter binaries
   layers = [
     "arn:aws:lambda:us-east-1:668596205778:layer:yt-dlp-binary:4",
     "arn:aws:lambda:us-east-1:668596205778:layer:ffmpeg-binary:1",
-    "arn:aws:lambda:us-east-1:668596205778:layer:youtube-cookies:7"
+    "arn:aws:lambda:us-east-1:668596205778:layer:youtube-cookies:7",
+    "arn:aws:lambda:us-east-1:668596205778:layer:ascii-image-converter:1"
   ]
 
   ephemeral_storage {

@@ -26,6 +26,7 @@ import {
 import { Block, CheckCircle, SwapHoriz, Delete, MusicNote } from '@mui/icons-material';
 import { calendarApi, adminApi } from '../api/client';
 import type { CalendarEntry } from '../api/client';
+import { formatBenAMDate, formatBenAMDateLong } from '../utils/dateFormat';
 
 type AdminAction = 'block' | 'unblock' | 'move' | 'delete';
 
@@ -246,11 +247,7 @@ const AdminPage = () => {
                 <Card>
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
-                      {date.toLocaleDateString('en-US', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                      })}
+                      {formatBenAMDate(date)}
                     </Typography>
                     <Chip label="Available" size="small" color="success" sx={{ mb: 1 }} />
                     <Button
@@ -290,11 +287,7 @@ const AdminPage = () => {
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                       <Typography variant="h6">
-                        {date.toLocaleDateString('en-US', {
-                          weekday: 'short',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
+                        {formatBenAMDate(date)}
                       </Typography>
                       {blocked ? (
                         <Block color="warning" />
@@ -407,12 +400,7 @@ const AdminPage = () => {
                 >
                   {availableDates.map(dateString => (
                     <MenuItem key={dateString} value={dateString}>
-                      {parseLocalDate(dateString).toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
+                      {formatBenAMDateLong(parseLocalDate(dateString))}
                     </MenuItem>
                   ))}
                 </Select>

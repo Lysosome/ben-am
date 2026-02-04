@@ -16,6 +16,7 @@ import { calendarApi } from '../api/client';
 import DJMessageSetup from '../components/DJMessageSetup';
 import YouTubePreview from '../components/YouTubePreview';
 import type { SubmitSongRequest } from '../api/client';
+import { formatBenAMDate } from '../utils/dateFormat';
 
 interface SongData {
   youtubeURL: string;
@@ -237,15 +238,21 @@ const SongSetupPage = () => {
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Setup Song for {date}
+      {date && (
+        <>
+          <Typography variant="h4" gutterBottom>
+            {formatBenAMDate(new Date(date))}
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 4 }}>
+            {`<QUERY> What song should wake Ben up`}
+          </Typography>
+        </>
+      )}
+
+      <Typography variant="body1" sx={{ fontWeight: 'bold'}} color='text.secondary'>
+        {`01/SONG`}
       </Typography>
-
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          1. YouTube Song
-        </Typography>
-
         <TextField
           fullWidth
           label="YouTube URL"
@@ -275,9 +282,15 @@ const SongSetupPage = () => {
         )}
       </Paper>
 
+      <Typography variant="body1" sx={{ fontWeight: 'bold'}} color='text.secondary'>
+        {`02/MESSAGE`}
+      </Typography>
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          2. DJ Message
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          {`<CONTEXT> You are the DJ`}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          {`<QUERY> What message do you want to leave for Ben`}
         </Typography>
         <DJMessageSetup 
           onChange={setDJMessageData} 
@@ -309,7 +322,7 @@ const SongSetupPage = () => {
           onClick={handleSubmit}
           disabled={!songData.youtubeURL || !songData.songTitle.trim() || !djMessageData || submitMutation.isPending || isLoadingTitle}
         >
-          {submitMutation.isPending ? 'Submitting...' : 'Submit Song'}
+          {submitMutation.isPending ? 'Submitting...' : 'Submit song'}
         </Button>
       </Box>
     </Container>

@@ -14,9 +14,10 @@ import {
 import { CheckCircle, Error as ErrorIcon } from '@mui/icons-material';
 import { calendarApi } from '../api/client';
 import { getUserId } from '../utils/user';
+import { formatBenAMDate } from '../utils/dateFormat';
 
 const TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes
-const FAKE_PROGRESS_DURATION = 45 * 1000; // 45 seconds to reach 99% (typical time is ~30 sec for a short video)
+const FAKE_PROGRESS_DURATION = 60 * 1000; // 60 seconds to reach 99% (typical time is ~60 sec for a short video)
 
 const ConfirmationPage = () => {
   const navigate = useNavigate();
@@ -146,8 +147,8 @@ const ConfirmationPage = () => {
     if (finalStatus === 'completed') {
       return {
         icon: <CheckCircle sx={{ fontSize: 60, color: 'success.main' }} />,
-        title: 'Success!',
-        message: `Your song has been successfully added for ${date}. Ben will wake up to your selection at 7 AM!`,
+        title: `${formatBenAMDate(new Date(date))} SUCCESS`,
+        message: `Song added. Ben will wake up to your selection at 7 AM`,
         color: 'success' as const,
       };
     }
@@ -155,7 +156,7 @@ const ConfirmationPage = () => {
     if (finalStatus === 'timeout') {
       return {
         icon: <ErrorIcon sx={{ fontSize: 60, color: 'error.main' }} />,
-        title: 'Processing Timeout',
+        title: 'Processing timeout',
         message: 'Song processing took too long and has been cancelled. The date has been released for another submission. Please try again with a different song or check your internet connection.',
         color: 'error' as const,
       };
@@ -164,7 +165,7 @@ const ConfirmationPage = () => {
     if (finalStatus === 'failed') {
       return {
         icon: <ErrorIcon sx={{ fontSize: 60, color: 'error.main' }} />,
-        title: 'Processing Failed',
+        title: 'Processing failed',
         message: data?.error || 'Failed to process your song. Please try again.',
         color: 'error' as const,
       };
@@ -177,7 +178,7 @@ const ConfirmationPage = () => {
 
     return {
       icon: <CircularProgress size={60} />,
-      title: 'Processing Your Song',
+      title: 'Processing song',
       message: statusText,
       color: 'info' as const,
       progress: fakeProgress,
@@ -212,12 +213,6 @@ const ConfirmationPage = () => {
           </Box>
         )}
 
-        {finalStatus === 'pending' && (
-          <Alert severity="info" sx={{ mb: 2, textAlign: 'left' }}>
-            This may take a few moments. Please don't close this page.
-          </Alert>
-        )}
-
         {finalStatus === 'timeout' && (
           <Button
             variant="contained"
@@ -225,7 +220,7 @@ const ConfirmationPage = () => {
             onClick={() => navigate('/')}
             fullWidth
           >
-            Back to Calendar
+            Back to calendar
           </Button>
         )}
 
@@ -239,7 +234,7 @@ const ConfirmationPage = () => {
               sx={{ mb: 2 }}
               disabled={retryMutation.isPending}
             >
-              {retryMutation.isPending ? 'Clearing...' : 'Try a Different Video'}
+              {retryMutation.isPending ? 'Clearing...' : 'Try a different video'}
             </Button>
             <Button
               variant="outlined"
@@ -248,7 +243,7 @@ const ConfirmationPage = () => {
               fullWidth
               disabled={cancelMutation.isPending}
             >
-              {cancelMutation.isPending ? 'Releasing...' : 'Release Date & Back to Calendar'}
+              {cancelMutation.isPending ? 'Releasing...' : 'Release date & back to calendar'}
             </Button>
           </>
         )}
@@ -260,7 +255,7 @@ const ConfirmationPage = () => {
             onClick={() => navigate('/')}
             fullWidth
           >
-            Back to Calendar
+            Back to calendar
           </Button>
         )}
       </Paper>

@@ -22,6 +22,8 @@ export interface SongEntry {
    */
   s3CombinedKey: string;
   thumbnailS3Key?: string;
+  /** ASCII art representation of the thumbnail for display on calendar */
+  asciiThumbnail?: string;
   djName: string;
   djType: 'recorded' | 'tts';
   djMessage: string;
@@ -94,6 +96,8 @@ export interface CalendarEntry {
   date: string;
   songTitle: string;
   thumbnailURL?: string;
+  /** ASCII art representation of the thumbnail */
+  asciiThumbnail?: string;
   djName: string;
   isAvailable: boolean;
   isLocked?: boolean;

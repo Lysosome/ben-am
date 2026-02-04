@@ -2,30 +2,43 @@ import { createTheme } from '@mui/material/styles';
 
 export const theme = createTheme({
   palette: {
-    mode: 'light',
+    mode: 'dark',
     primary: {
-      main: '#1db954', // Spotify green
-      light: '#1ed760',
-      dark: '#1aa34a',
-      contrastText: '#fff',
+      main: '#E6E6E6',
+      contrastText: '#111111',
     },
     secondary: {
-      main: '#191414', // Dark background
-      light: '#282828',
-      dark: '#000000',
-      contrastText: '#fff',
+      main: '#A31313',
+      dark: '#1A0000',
+      light: '#E0A0A0',
+      contrastText: '#111111',
     },
     background: {
-      default: '#f5f5f5',
-      paper: '#ffffff',
+      default: '#111111',
+      paper: '#111111',
     },
     text: {
-      primary: '#191414',
-      secondary: '#535353',
+      primary: '#E6E6E6',
+      secondary: '#A1A1A1',
+    },
+    divider: 'rgba(161,161,161,0.12)',
+    error: {
+      main: '#A31313',
+      dark: '#1A0000',
+      light: '#FE8D8D',
+      contrastText: '#E6E6E6',
+    },
+    success: {
+      main: '#9FC38A',
+      contrastText: '#111111',
+    },
+    warning: {
+      main: '#E4C0A0',
+      contrastText: '#111111',
     },
   },
   typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Courier New", Courier, monospace', // "Share Tech Mono", 
     h1: {
       fontSize: '3rem',
       fontWeight: 700,
@@ -50,7 +63,7 @@ export const theme = createTheme({
     },
     h6: {
       fontSize: '1.125rem',
-      fontWeight: 500,
+      fontWeight: 700,
     },
     button: {
       textTransform: 'none',
@@ -64,14 +77,16 @@ export const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 24,
+          borderRadius: 6,
           padding: '10px 24px',
           fontSize: '1rem',
         },
         contained: {
           boxShadow: 'none',
+          backgroundColor: '#E6E6E6',
+          color: '#111111',
           '&:hover': {
-            boxShadow: '0 4px 12px rgba(29, 185, 84, 0.3)',
+            backgroundColor: '#dcdcdc',
           },
         },
       },
@@ -79,10 +94,34 @@ export const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-          '&:hover': {
-            boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-          },
+          backgroundColor: '#111111',
+          borderRadius: 0,
+          border: 'none',
+          position: 'relative',
+          backgroundImage: `
+            linear-gradient(to right, #510000 0%, #510000 100%),
+            linear-gradient(to right, #510000 0%, #510000 100%),
+            linear-gradient(to bottom, #510000 0%, #510000 100%),
+            linear-gradient(to bottom, #510000 0%, #510000 100%)
+          `,
+          backgroundSize: 'calc(100% - 20px) 2px, calc(100% - 20px) 2px, 2px calc(100% - 20px), 2px calc(100% - 20px)',
+          backgroundPosition: '10px 0, 10px 100%, 0 10px, 100% 10px',
+          backgroundRepeat: 'no-repeat',
+        },
+      },
+    },
+    MuiCardContent: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
+        },
+      },
+    },
+    MuiCardMedia: {
+      styleOverrides: {
+        root: {
+          margin: '10px 10px 0 10px',
+          width: 'calc(100% - 20px)',
         },
       },
     },
@@ -90,8 +129,44 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            borderRadius: 12,
+            borderRadius: 6,
           },
+        },
+      },
+    },
+    MuiChip: {
+      defaultProps: {
+        variant: 'outlined',
+      },
+      styleOverrides: {
+        root: {
+          borderRadius: 4,
+        },
+      },
+    },
+    MuiToggleButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 6,
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundColor: 'transparent',
+          borderRadius: 0,
+          border: 'none',
+          position: 'relative',
+          backgroundImage: `
+            linear-gradient(to right, #510000 0%, #510000 100%),
+            linear-gradient(to right, #510000 0%, #510000 100%),
+            linear-gradient(to bottom, #510000 0%, #510000 100%),
+            linear-gradient(to bottom, #510000 0%, #510000 100%)
+          `,
+          backgroundSize: 'calc(100% - 20px) 2px, calc(100% - 20px) 2px, 2px calc(100% - 20px), 2px calc(100% - 20px)',
+          backgroundPosition: '10px 0, 10px 100%, 0 10px, 100% 10px',
+          backgroundRepeat: 'no-repeat',
         },
       },
     },

@@ -21,7 +21,8 @@ terraform {
 }
 
 provider "aws" {
-  region = var.aws_region
+  region  = var.aws_region
+  profile = "chimera" # Adjust or remove as needed for your AWS CLI profile
 
   default_tags {
     tags = {

@@ -164,6 +164,11 @@ npm install
 npm run build
 ```
 
+The build uses **esbuild** to bundle all dependencies (except AWS SDK which is provided by Lambda) into a single `dist/index.js` file (~1.7MB). This eliminates the need for node_modules in the deployment package.
+
+- `npm run build` - Production build with esbuild (for deployment)
+- `npm run build:tsc` - TypeScript build (for type checking)
+
 ### Local Testing
 ```bash
 # Test download functionality (requires local yt-dlp and ffmpeg)

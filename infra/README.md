@@ -55,6 +55,8 @@ cd ../backend
 npm run build  # or build each workspace individually
 ```
 
+The youtube-dl Lambda uses **esbuild** bundling, which creates a single ~1.7MB file with all dependencies included (no node_modules needed in deployment).
+
 ### 3. Deploy Frontend
 Build and upload the React frontend to S3:
 ```bash

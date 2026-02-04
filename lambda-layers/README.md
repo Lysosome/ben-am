@@ -1,12 +1,13 @@
 # Lambda Layers for YouTube Download
 
-This directory contains scripts to build Lambda layers for yt-dlp, ffmpeg, and YouTube cookies.
+This directory contains scripts to build Lambda layers for yt-dlp, ffmpeg, YouTube cookies, and ascii-image-converter.
 
 ## Layers Needed
 
 1. **yt-dlp**: YouTube video downloader
 2. **ffmpeg**: Audio/video processing
 3. **youtube-cookies**: YouTube authentication cookies (sensitive)
+4. **ascii-image-converter**: Convert thumbnails to ASCII art
 
 ## Building the Layers
 
@@ -48,7 +49,16 @@ cd lambda-layers
 ./build-cookies-layer.sh
 ```
 
-### 4. Upload to AWS
+### 4. Build ASCII Image Converter Layer
+
+This layer provides high-quality ASCII art conversion for thumbnails.
+
+```bash
+cd lambda-layers
+./build-ascii-converter-layer.sh
+```
+
+### 5. Upload to AWS
 
 ```bash
 # Upload yt-dlp layer
@@ -74,6 +84,14 @@ aws lambda publish-layer-version \
   --zip-file fileb://cookies-layer.zip \
   --compatible-runtimes nodejs20.x \
   --region us-east-1
+
+# Upload ascii-image-converter layer
+aws lambda publish-layer-version \
+  --layer-name ascii-image-converter \
+  --description "ascii-image-converter Go binary" \
+  --zip-file fileb://ascii-converter-layer.zip \
+  --compatible-runtimes nodejs20.x \
+  --region us-east-1
 ```
 
 After uploading, update the layer ARNs in `infra/lambda.tf`.
@@ -95,6 +113,10 @@ ffmpeg-layer/
 cookies-layer/
 └── cookies/
     └── cookies.txt
+
+ascii-converter-layer/
+└── bin/
+    └── ascii-image-converter
 ```
 
 ## Security: YouTube Cookies

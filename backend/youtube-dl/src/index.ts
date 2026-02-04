@@ -3,10 +3,8 @@ import { DynamoDBDocumentClient, UpdateCommand, GetCommand } from '@aws-sdk/lib-
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { PollyClient, SynthesizeSpeechCommand, Engine, OutputFormat, VoiceId } from '@aws-sdk/client-polly';
 import { spawn } from 'child_process';
-import { promisify } from 'util';
 import { writeFile, readFile, unlink } from 'fs/promises';
 import { createWriteStream } from 'fs';
-import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
 import { Readable } from 'stream';
 import { pipeline } from 'stream/promises';
@@ -23,8 +21,11 @@ const MAX_DURATION = parseInt(process.env.MAX_SONG_DURATION_SECONDS || '600');
 // Path to binaries (from Lambda layer or local)
 const YT_DLP_BIN = process.env.YT_DLP_BIN || '/opt/bin/yt-dlp';
 const FFMPEG_BIN = process.env.FFMPEG_BIN || '/opt/bin/ffmpeg';
+const ASCII_CONVERTER_BIN = process.env.ASCII_CONVERTER_BIN || '/opt/bin/ascii-image-converter';
 const COOKIES_FILE_SOURCE = process.env.COOKIES_FILE || '/opt/cookies/cookies.txt';
 const COOKIES_FILE = '/tmp/cookies.txt'; // Writable location for yt-dlp
+
+const ASCII_ART_WIDTH_CHARACTERS = 60;
 
 interface YouTubeDownloadEvent {
   jobId: string;
@@ -121,6 +122,18 @@ export async function handler(event: YouTubeDownloadEvent): Promise<void> {
     console.log('Downloading thumbnail...');
     await downloadThumbnail(youtubeURL, thumbnailFile);
     console.log(`[PERF] Downloaded thumbnail: ${Date.now() - t4}ms`);
+    
+    // Convert thumbnail to ASCII art using ascii-image-converter binary
+    let asciiThumbnail: string = '';
+    try {
+      console.log('Converting thumbnail to ASCII art...');
+      const t4b = Date.now();
+      asciiThumbnail = await convertToAscii(thumbnailFile, ASCII_ART_WIDTH_CHARACTERS);
+      console.log(`[PERF] Converted thumbnail to ASCII art: ${Date.now() - t4b}ms`);
+      console.log(`ASCII thumbnail length: ${asciiThumbnail?.length || 0} characters`);
+    } catch (asciiError) {
+      console.warn('ASCII thumbnail conversion failed (non-critical):', asciiError);
+    }
     await updateProcessingStatus(date, 'processing', 50);
 
     // Prepare audio files to concatenate
@@ -254,21 +267,31 @@ export async function handler(event: YouTubeDownloadEvent): Promise<void> {
     console.log(`  s3SongKey: ${s3SongKey}`);
     console.log(`  s3CombinedKey: ${finalCombinedKey}`);
     console.log(`  thumbnailS3Key: ${s3ThumbnailKey}`);
+    console.log(`  asciiThumbnail: ${asciiThumbnail ? `${asciiThumbnail.length} chars` : 'none'}`);
+    
+    // Build update expression dynamically to include asciiThumbnail if available
+    let updateExpression = 'SET processingStatus = :status, #dur = :duration, s3SongKey = :songKey, s3CombinedKey = :combinedKey, thumbnailS3Key = :thumbKey';
+    const expressionAttributeValues: Record<string, unknown> = {
+      ':status': 'completed',
+      ':duration': clipDuration,
+      ':songKey': s3SongKey,
+      ':combinedKey': finalCombinedKey,
+      ':thumbKey': s3ThumbnailKey,
+    };
+    
+    if (asciiThumbnail) {
+      updateExpression += ', asciiThumbnail = :asciiThumb';
+      expressionAttributeValues[':asciiThumb'] = asciiThumbnail;
+    }
     
     await docClient.send(new UpdateCommand({
       TableName: TABLE_NAME,
       Key: { PK: `SONG#${date}` },
-      UpdateExpression: 'SET processingStatus = :status, #dur = :duration, s3SongKey = :songKey, s3CombinedKey = :combinedKey, thumbnailS3Key = :thumbKey',
+      UpdateExpression: updateExpression,
       ExpressionAttributeNames: {
         '#dur': 'duration',
       },
-      ExpressionAttributeValues: {
-        ':status': 'completed',
-        ':duration': clipDuration,
-        ':songKey': s3SongKey,
-        ':combinedKey': finalCombinedKey,
-        ':thumbKey': s3ThumbnailKey,
-      },
+      ExpressionAttributeValues: expressionAttributeValues,
     }));
     console.log(`[PERF] Updated DynamoDB completion: ${Date.now() - t11}ms`);
 
@@ -790,6 +813,65 @@ async function downloadThumbnail(url: string, outputFile: string): Promise<void>
       } else {
         resolve();
       }
+    });
+  });
+}
+
+/**
+ * Convert an image to ASCII art using ascii-image-converter binary
+ * @param imagePath Path to the image file
+ * @param width Width of ASCII output in characters
+ * @returns ASCII art string
+ */
+async function convertToAscii(imagePath: string, width: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    console.log('Using ascii-image-converter binary:', ASCII_CONVERTER_BIN);
+    
+    const args = [
+      imagePath,
+      '--width', width.toString(),
+      '--complex',         // Use a wider range of characters for more detail
+      '--color',           // Enable ANSI color output
+    ];
+
+    console.log(`Running: ${ASCII_CONVERTER_BIN} ${args.join(' ')}`);
+    
+    // Force color output by setting COLORTERM environment variable
+    // This tricks the tool into thinking it's running in a color-capable terminal
+    const proc = spawn(ASCII_CONVERTER_BIN, args, {
+      env: {
+        ...process.env,
+        COLORTERM: 'truecolor',  // Force 24-bit color support
+        TERM: 'xterm-256color',   // Indicate 256 color terminal support
+      }
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    proc.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    proc.on('close', (code) => {
+      if (code !== 0) {
+        console.error('ascii-image-converter stderr:', stderr);
+        reject(new Error(`ascii-image-converter failed with code ${code}: ${stderr}`));
+      } else {
+        // Log first few lines for debugging
+        const lines = stdout.split('\n');
+        console.log(`ASCII art generated: ${lines.length} lines, ${stdout.length} characters`);
+        console.log('First 3 lines preview:', lines.slice(0, 3).join('\n'));
+        resolve(stdout);
+      }
+    });
+
+    proc.on('error', (err) => {
+      reject(new Error(`Failed to spawn ascii-image-converter: ${err.message}`));
     });
   });
 }
