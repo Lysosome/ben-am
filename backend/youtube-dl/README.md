@@ -14,6 +14,20 @@ The YouTube-DL Lambda is invoked asynchronously by the API when a user submits a
 6. **Upload** - Stores the combined audio and thumbnail in S3
 7. **Update Status** - Updates DynamoDB with completion status
 
+## ⚠️ Maintenance: yt-dlp Updates
+
+**Critical**: YouTube frequently changes their API, breaking yt-dlp. Update every 1-2 weeks or when downloads fail.
+
+```bash
+# From project root
+npm run update:yt-dlp-full
+
+# Then update infra/lambda.tf with new layer ARN and:
+cd infra && terraform apply
+```
+
+See [../../lambda-layers/README.md](../../lambda-layers/README.md) for details.
+
 ## Audio Processing Flow
 
 ```

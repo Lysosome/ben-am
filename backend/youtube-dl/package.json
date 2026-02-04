@@ -15,6 +15,7 @@
     "@aws-sdk/client-dynamodb": "^3.600.0",
     "@aws-sdk/client-polly": "^3.600.0",
     "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/client-ses": "^3.982.0",
     "@aws-sdk/lib-dynamodb": "^3.600.0",
     "uuid": "^10.0.0"
   },

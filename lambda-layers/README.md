@@ -13,10 +13,37 @@ This directory contains scripts to build Lambda layers for yt-dlp, ffmpeg, YouTu
 
 ### 1. Build yt-dlp Layer
 
+⚠️ **Important**: yt-dlp must be updated frequently (every 1-2 weeks) as YouTube makes breaking API changes.
+
+**Quick update workflow:**
 ```bash
+# From project root - builds and deploys in one command
+npm run update:yt-dlp-full
+
+# Then update Terraform with the new layer ARN and apply:
+cd infra
+# Edit lambda.tf to update the layer version number in the ARN
+terraform apply
+```
+
+**Manual workflow:**
+```bash
+# Just build the layer
 cd lambda-layers
 ./build-yt-dlp-layer.sh
+
+# Or use npm script from root
+npm run update:yt-dlp
+
+# Deploy to AWS (after building)
+npm run deploy:yt-dlp-layer
 ```
+
+The build script will:
+- Check for the latest yt-dlp version from GitHub
+- Compare with your currently deployed layer
+- Prompt you to continue if the layer was recently updated
+- Include version and date in the layer description for tracking
 
 ### 2. Build ffmpeg Layer
 
@@ -60,11 +87,19 @@ cd lambda-layers
 
 ### 5. Upload to AWS
 
+**Recommended:** Use the npm scripts for easier updates:
+```bash
+# From project root
+npm run deploy:yt-dlp-layer    # Deploys yt-dlp layer with version tracking
+npm run update:yt-dlp-full     # Build + deploy in one command
+```
+
+**Manual upload:**
 ```bash
 # Upload yt-dlp layer
 aws lambda publish-layer-version \
   --layer-name yt-dlp-binary \
-  --description "yt-dlp binary for Lambda" \
+  --description "yt-dlp $(date +%Y-%m-%d)" \
   --zip-file fileb://yt-dlp-layer.zip \
   --compatible-runtimes nodejs20.x \
   --region us-east-1
@@ -94,7 +129,32 @@ aws lambda publish-layer-version \
   --region us-east-1
 ```
 
-After uploading, update the layer ARNs in `infra/lambda.tf`.
+After uploading, **update the layer ARNs in `infra/lambda.tf`** with the new version number, then run:
+```bash
+cd infra
+terraform apply
+```
+
+## Maintenance Schedule
+
+### yt-dlp Updates
+**Frequency**: Every 1-2 weeks (or when YouTube breaks)
+
+YouTube frequently changes their API, causing yt-dlp to break. Signs you need to update:
+- Songs fail to download in the Lambda logs
+- "Sign in to confirm you're not a bot" errors
+- HTTP 403 or 429 errors from YouTube
+
+**Quick fix:**
+```bash
+npm run update:yt-dlp-full
+# Then update infra/lambda.tf and terraform apply
+```
+
+### Cookie Updates
+**Frequency**: Every 2-3 months (or when authentication fails)
+
+See the "Cookie Expiration" section below for details.
 
 ## Layer Structure
 

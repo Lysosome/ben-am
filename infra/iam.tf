@@ -240,6 +240,20 @@ resource "aws_iam_role_policy" "youtube_dl_lambda" {
         ]
         Resource = "*"
       },
+      # SES for error notification emails
+      {
+        Effect = "Allow"
+        Action = [
+          "ses:SendEmail",
+          "ses:SendRawEmail"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "ses:FromAddress" = var.ses_email_sender
+          }
+        }
+      },
       # CloudWatch Logs
       {
         Effect = "Allow"

@@ -134,7 +134,7 @@ resource "aws_lambda_function" "youtube_dl" {
   
   # Lambda layers for yt-dlp, ffmpeg, cookies, and ascii-image-converter binaries
   layers = [
-    "arn:aws:lambda:us-east-1:668596205778:layer:yt-dlp-binary:4",
+    "arn:aws:lambda:us-east-1:668596205778:layer:yt-dlp-binary:6",
     "arn:aws:lambda:us-east-1:668596205778:layer:ffmpeg-binary:1",
     "arn:aws:lambda:us-east-1:668596205778:layer:youtube-cookies:7",
     "arn:aws:lambda:us-east-1:668596205778:layer:ascii-image-converter:1"
@@ -149,6 +149,8 @@ resource "aws_lambda_function" "youtube_dl" {
       S3_BUCKET                = local.assets_bucket
       TABLE_NAME               = local.table_name
       MAX_SONG_DURATION_SECONDS = var.max_song_duration_seconds
+      SES_EMAIL_SENDER         = var.ses_email_sender
+      ALERT_EMAIL              = "ben@benma.dev"
       AWS_NODEJS_CONNECTION_REUSE_ENABLED = "1"
       # Tell yt-dlp to use Node.js for n-challenge solving (already available in Lambda runtime)
       PATH = "/var/lang/bin:/usr/local/bin:/usr/bin/:/bin:/opt/bin"

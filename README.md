@@ -49,6 +49,25 @@ ben-am/
 | **Infrastructure-as-Code** | Terraform |
 | **Automation** | GitHub Actions (CD), npm workspaces |
 | **Alexa Skill SDK** | `ask-sdk-core` for Node.js |
+| **Media Processing** | yt-dlp (YouTube download), ffmpeg (audio conversion) |
+
+---
+
+## 🔧 Maintenance
+
+### Keeping yt-dlp Updated
+
+YouTube frequently changes their API, requiring yt-dlp updates every 1-2 weeks. The project includes scripts for easy updates:
+
+```bash
+# Quick update: build + deploy yt-dlp layer
+npm run update:yt-dlp-full
+
+# After deployment, update the layer version in infra/lambda.tf, then:
+cd infra && terraform apply
+```
+
+See [lambda-layers/README.md](lambda-layers/README.md) for detailed maintenance instructions.
 
 ---
 

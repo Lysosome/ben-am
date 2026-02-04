@@ -14,7 +14,10 @@
     "dev": "cd frontend && npm run dev",
     "deploy:infra": "cd infra && terraform init && terraform apply -auto-approve",
     "clean": "rm -rf node_modules backend/*/node_modules frontend/node_modules infra/node_modules backend/*/dist frontend/dist frontend/build",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "update:yt-dlp": "cd lambda-layers && ./build-yt-dlp-layer.sh",
+    "deploy:yt-dlp-layer": "cd lambda-layers && LATEST_VERSION=$(curl -s https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest | grep '\"tag_name\"' | sed -E 's/.*\"([^\"]+)\".*/\\1/') && aws lambda publish-layer-version --layer-name yt-dlp-binary --zip-file fileb://yt-dlp-layer.zip --compatible-runtimes nodejs20.x --region us-east-1 --description \"yt-dlp $LATEST_VERSION - $(date +%Y-%m-%d)\" && echo '' && echo '✅ Layer uploaded! Update infra/lambda.tf with the new layer ARN, then run: terraform apply'",
+    "update:yt-dlp-full": "npm run update:yt-dlp && npm run deploy:yt-dlp-layer"
   },
   "devDependencies": {
     "eslint": "^9.0.0",

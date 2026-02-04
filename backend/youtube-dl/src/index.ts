@@ -2,6 +2,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, UpdateCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { PollyClient, SynthesizeSpeechCommand, Engine, OutputFormat, VoiceId } from '@aws-sdk/client-polly';
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { spawn } from 'child_process';
 import { writeFile, readFile, unlink } from 'fs/promises';
 import { createWriteStream } from 'fs';
@@ -13,10 +14,13 @@ const ddbClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(ddbClient);
 const s3Client = new S3Client({});
 const pollyClient = new PollyClient({});
+const sesClient = new SESClient({});
 
 const TABLE_NAME = process.env.TABLE_NAME!;
 const S3_BUCKET = process.env.S3_BUCKET!;
 const MAX_DURATION = parseInt(process.env.MAX_SONG_DURATION_SECONDS || '600');
+const SES_EMAIL_SENDER = process.env.SES_EMAIL_SENDER!;
+const ALERT_EMAIL = process.env.ALERT_EMAIL || SES_EMAIL_SENDER;
 
 // Path to binaries (from Lambda layer or local)
 const YT_DLP_BIN = process.env.YT_DLP_BIN || '/opt/bin/yt-dlp';
@@ -348,6 +352,88 @@ async function getSongEntry(date: string): Promise<SongEntry | null> {
     Key: { PK: `SONG#${date}` },
   }));
   return result.Item as SongEntry | null;
+}
+
+/**
+ * Send error notification email via SES
+ */
+async function sendErrorNotification(
+  subject: string,
+  errorDetails: string,
+  context: { date?: string; youtubeURL?: string; jobId?: string }
+): Promise<void> {
+  if (!ALERT_EMAIL) return;
+  try {
+    const htmlBody = `
+      <html>
+        <body>
+          <h2>🚨 Ben AM - yt-dlp Error Alert</h2>
+          <p><strong>An error occurred in the YouTube download Lambda:</strong></p>
+          <hr>
+          <h3>Context:</h3>
+          <ul>
+            ${context.date ? `<li><strong>Date:</strong> ${context.date}</li>` : ''}
+            ${context.youtubeURL ? `<li><strong>YouTube URL:</strong> <a href="${context.youtubeURL}">${context.youtubeURL}</a></li>` : ''}
+            ${context.jobId ? `<li><strong>Job ID:</strong> ${context.jobId}</li>` : ''}
+          </ul>
+          <h3>Error Details:</h3>
+          <pre style="background-color: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto;">${errorDetails}</pre>
+          <hr>
+          <p><em>This usually indicates that yt-dlp needs to be updated. Run:</em></p>
+          <code style="background-color: #f5f5f5; padding: 5px;">npm run update:yt-dlp-full</code>
+          <p>Timestamp: ${new Date().toISOString()}</p>
+        </body>
+      </html>
+    `;
+
+    const textBody = `
+🚨 Ben AM - yt-dlp Error Alert
+
+An error occurred in the YouTube download Lambda:
+
+Context:
+${context.date ? `- Date: ${context.date}` : ''}
+${context.youtubeURL ? `- YouTube URL: ${context.youtubeURL}` : ''}
+${context.jobId ? `- Job ID: ${context.jobId}` : ''}
+
+Error Details:
+${errorDetails}
+
+---
+This usually indicates that yt-dlp needs to be updated. Run:
+npm run update:yt-dlp-full
+
+Timestamp: ${new Date().toISOString()}
+    `.trim();
+
+    await sesClient.send(new SendEmailCommand({
+      Source: SES_EMAIL_SENDER,
+      Destination: {
+        ToAddresses: [ALERT_EMAIL],
+      },
+      Message: {
+        Subject: {
+          Data: subject,
+          Charset: 'UTF-8',
+        },
+        Body: {
+          Html: {
+            Data: htmlBody,
+            Charset: 'UTF-8',
+          },
+          Text: {
+            Data: textBody,
+            Charset: 'UTF-8',
+          },
+        },
+      },
+    }));
+
+    console.log(`✅ Error notification email sent to ${ALERT_EMAIL}`);
+  } catch (emailError) {
+    console.error('Failed to send error notification email:', emailError);
+    // Don't throw - we don't want email failures to mask the original error
+  }
 }
 
 /**
@@ -716,10 +802,19 @@ async function getVideoInfo(url: string): Promise<{ title: string; duration: num
       stderr += data.toString();
     });
 
-    ytdl.on('close', (code) => {
+    ytdl.on('close', async (code) => {
       if (code !== 0) {
         console.error('yt-dlp error:', stderr);
-        reject(new Error(`yt-dlp failed with code ${code}: ${stderr}`));
+        const error = new Error(`yt-dlp failed with code ${code}: ${stderr}`);
+        
+        // Send error notification email
+        await sendErrorNotification(
+          '🚨 Ben AM: yt-dlp Video Info Fetch Failed',
+          `Exit code: ${code}\n\nStderr output:\n${stderr}`,
+          { youtubeURL: url }
+        );
+        
+        reject(error);
         return;
       }
 
@@ -771,9 +866,18 @@ async function downloadAudio(url: string, outputFile: string, startTime: number,
       console.error(data.toString());
     });
 
-    ytdl.on('close', (code) => {
+    ytdl.on('close', async (code) => {
       if (code !== 0) {
-        reject(new Error(`yt-dlp audio download failed with code ${code}`));
+        const error = new Error(`yt-dlp audio download failed with code ${code}`);
+        
+        // Send error notification email
+        await sendErrorNotification(
+          '🚨 Ben AM: yt-dlp Audio Download Failed',
+          `Exit code: ${code}\n\nCommand: ${YT_DLP_BIN} ${args.join(' ')}\n\nCheck Lambda logs for full stderr output.`,
+          { youtubeURL: url, jobId: outputFile.includes('/') ? path.basename(outputFile, '.mp3') : undefined }
+        );
+        
+        reject(error);
       } else {
         resolve();
       }
