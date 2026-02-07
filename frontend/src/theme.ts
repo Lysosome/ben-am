@@ -170,5 +170,46 @@ export const theme = createTheme({
         },
       },
     },
+    MuiPaginationItem: {
+      styleOverrides: {
+        root: {
+          fontFamily: '"Courier New", Courier, monospace',
+          color: '#A1A1A1', // text.secondary
+          '&.Mui-selected': {
+            backgroundColor: 'transparent',
+            color: '#E0A0A0', // secondary.light
+            fontWeight: 700,
+            '&:hover': {
+              backgroundColor: 'rgba(224, 160, 160, 0.08)',
+            },
+          },
+          '&:hover': {
+            backgroundColor: 'rgba(161, 161, 161, 0.08)',
+          },
+          // Previous button: hide icon and show < character
+          '&.MuiPaginationItem-previousNext[aria-label*="previous"]': {
+            '& .MuiSvgIcon-root': {
+              display: 'none',
+            },
+            '&::after': {
+              content: '"<"',
+              fontFamily: '"Courier New", Courier, monospace',
+              fontSize: '1.2rem',
+            },
+          },
+          // Next button: hide icon and show > character
+          '&.MuiPaginationItem-previousNext[aria-label*="next"]': {
+            '& .MuiSvgIcon-root': {
+              display: 'none',
+            },
+            '&::after': {
+              content: '">"',
+              fontFamily: '"Courier New", Courier, monospace',
+              fontSize: '1.2rem',
+            },
+          },
+        },
+      },
+    },
   },
 });

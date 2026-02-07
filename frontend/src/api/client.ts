@@ -72,8 +72,9 @@ export interface StatusResponse {
 
 // API Functions
 export const calendarApi = {
-  getCalendar: async (): Promise<{ calendar: CalendarEntry[] }> => {
-    const response = await apiClient.get('/calendar');
+  getCalendar: async (lightweight?: boolean): Promise<{ calendar: CalendarEntry[] }> => {
+    const params = lightweight ? { lightweight: 'true' } : {};
+    const response = await apiClient.get('/calendar', { params });
     return response.data;
   },
 

@@ -8,15 +8,15 @@ import {
   Button,
   Typography,
   Alert,
-  CircularProgress,
   Paper,
 } from '@mui/material';
+import Spinner from '../components/Spinner';
 import { getUserId, saveDJPreferences, getDJPreferences } from '../utils/user';
 import { calendarApi } from '../api/client';
 import DJMessageSetup from '../components/DJMessageSetup';
 import YouTubePreview from '../components/YouTubePreview';
 import type { SubmitSongRequest } from '../api/client';
-import { formatBenAMDate } from '../utils/dateFormat';
+import { formatBenAMDate, parseLocalDate } from '../utils/dateFormat';
 
 interface SongData {
   youtubeURL: string;
@@ -215,39 +215,37 @@ const SongSetupPage = () => {
     submitMutation.mutate(payload);
   };
 
-  if (isLocking) {
-    return (
-      <Container sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-        <CircularProgress />
-      </Container>
-    );
-  }
-
-  if (lockError) {
-    return (
-      <Container sx={{ mt: 4 }}>
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {lockError}
-        </Alert>
-        <Button variant="contained" onClick={() => navigate('/')}>
-          Back to Calendar
-        </Button>
-      </Container>
-    );
-  }
-
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
       {date && (
         <>
           <Typography variant="h4" gutterBottom>
-            {formatBenAMDate(new Date(date))}
+            {formatBenAMDate(parseLocalDate(date))}
           </Typography>
           <Typography variant="body1" sx={{ mb: 4 }}>
             {`<QUERY> What song should wake Ben up`}
           </Typography>
         </>
       )}
+
+      {isLocking && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
+          <Spinner />
+        </Box>
+      )}
+
+      {lockError && (
+        <>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {lockError}
+          </Alert>
+          <Button variant="contained" onClick={() => navigate('/')}>
+            Back to Calendar
+          </Button>
+        </>
+      )}
+
+      {!isLocking && !lockError && (<>
 
       <Typography variant="body1" sx={{ fontWeight: 'bold'}} color='text.secondary'>
         {`01/SONG`}
@@ -325,6 +323,7 @@ const SongSetupPage = () => {
           {submitMutation.isPending ? 'Submitting...' : 'Submit song'}
         </Button>
       </Box>
+      </> )}
     </Container>
   );
 };

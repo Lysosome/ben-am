@@ -24,3 +24,10 @@ export function formatBenAMDateLong(date: Date): string {
   
   return `${weekday}//${day}-${month}-${year}`;
 }
+
+
+// Helper to parse YYYY-MM-DD as local date (not UTC)
+export const parseLocalDate = (dateString: string): Date => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};

@@ -17,13 +17,13 @@ import {
   Alert,
   Snackbar,
   Chip,
-  CircularProgress,
   MenuItem,
   Select,
   FormControl,
   InputLabel,
 } from '@mui/material';
 import { Block, CheckCircle, SwapHoriz, Delete, MusicNote } from '@mui/icons-material';
+import Spinner from '../components/Spinner';
 import { calendarApi, adminApi } from '../api/client';
 import type { CalendarEntry } from '../api/client';
 import { formatBenAMDate, formatBenAMDateLong } from '../utils/dateFormat';
@@ -64,6 +64,19 @@ const AdminPage = () => {
     queryFn: calendarApi.getCalendar,
     refetchInterval: 30000,
   });
+
+  // Render page header immediately
+  const renderHeader = () => (
+    <Box sx={{ mb: 4 }}>
+      <Typography variant="h3" gutterBottom>
+        <MusicNote sx={{ fontSize: 40, verticalAlign: 'bottom', mr: 1 }} />
+        Admin Controls
+      </Typography>
+      <Typography variant="body1" color="text.secondary">
+        Manage calendar entries, block dates, and perform administrative actions.
+      </Typography>
+    </Box>
+  );
 
   const blockMutation = useMutation({
     mutationFn: ({ date, reason }: { date: string; reason?: string }) => adminApi.blockDate(date, reason),
@@ -167,22 +180,6 @@ const AdminPage = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  if (isLoading) {
-    return (
-      <Container sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-        <CircularProgress />
-      </Container>
-    );
-  }
-
-  if (error) {
-    return (
-      <Container sx={{ mt: 4 }}>
-        <Alert severity="error">Failed to load calendar data</Alert>
-      </Container>
-    );
-  }
-
   // Generate next 30 days for available dates display
   const today = new Date();
   const dates: Date[] = [];
@@ -223,14 +220,19 @@ const AdminPage = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h3" component="h1" gutterBottom>
-          Admin Controls
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Manage calendar dates and songs
-        </Typography>
-      </Box>
+      {renderHeader()}
+
+      {isLoading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+          <Spinner />
+        </Box>
+      )}
+
+      {error && (
+        <Alert severity="error">Failed to load calendar data</Alert>
+      )}
+
+      {!isLoading && !error && (<>
 
       <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="h5" gutterBottom>
@@ -439,6 +441,7 @@ const AdminPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      </>)}
 
       {/* Success/Error Snackbar */}
       <Snackbar

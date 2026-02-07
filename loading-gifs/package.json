@@ -1,0 +1,13 @@
+{
+  "name": "loading-gifs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Convert GIF files to ASCII art animation JSON files",
+  "type": "module",
+  "scripts": {
+    "convert": "node convert.mjs"
+  },
+  "devDependencies": {
+    "sharp": "^0.33.2"
+  }
+}

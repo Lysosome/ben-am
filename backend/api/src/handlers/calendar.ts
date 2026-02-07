@@ -38,11 +38,14 @@ interface CalendarEntry {
 }
 
 /**
- * GET /calendar
+ * GET /calendar?lightweight=true (optional)
  * Fetch all existing songs and current locks for calendar display
+ * If lightweight=true, excludes thumbnailURL and asciiThumbnail for faster polling
  */
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
+    const lightweight = event.queryStringParameters?.lightweight === 'true';
+
     // Scan for all SONG# and LOCK# entries
     const result = await docClient.send(new ScanCommand({
       TableName: TABLE_NAME,
@@ -78,27 +81,33 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     // Add existing songs
     for (const song of songs) {
       let thumbnailURL: string | undefined;
+      let asciiThumbnail: string | undefined;
       
-      if (song.thumbnailS3Key) {
-        try {
-          thumbnailURL = await getSignedUrl(
-            s3Client,
-            new GetObjectCommand({
-              Bucket: S3_BUCKET,
-              Key: song.thumbnailS3Key,
-            }),
-            { expiresIn: 3600 } // 1 hour
-          );
-        } catch (error) {
-          console.error('Error generating thumbnail URL:', error);
+      // Skip heavy fields in lightweight mode
+      if (!lightweight) {
+        if (song.thumbnailS3Key) {
+          try {
+            thumbnailURL = await getSignedUrl(
+              s3Client,
+              new GetObjectCommand({
+                Bucket: S3_BUCKET,
+                Key: song.thumbnailS3Key,
+              }),
+              { expiresIn: 3600 } // 1 hour
+            );
+          } catch (error) {
+            console.error('Error generating thumbnail URL:', error);
+          }
         }
+        
+        asciiThumbnail = song.asciiThumbnail;
       }
 
       calendar.push({
         date: song.date,
         songTitle: song.songTitle,
         thumbnailURL,
-        asciiThumbnail: song.asciiThumbnail,
+        asciiThumbnail,
         djName: song.djName,
         isAvailable: false,
       });

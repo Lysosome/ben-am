@@ -5,16 +5,17 @@ import {
   Container,
   Box,
   Typography,
-  CircularProgress,
   Alert,
   Button,
   LinearProgress,
   Paper,
 } from '@mui/material';
 import { CheckCircle, Error as ErrorIcon } from '@mui/icons-material';
+import Spinner from '../components/Spinner';
 import { calendarApi } from '../api/client';
 import { getUserId } from '../utils/user';
-import { formatBenAMDate } from '../utils/dateFormat';
+import { formatBenAMDate, parseLocalDate } from '../utils/dateFormat';
+import logo from '../img/logo_bg_anim.gif';
 
 const TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes
 const FAKE_PROGRESS_DURATION = 60 * 1000; // 60 seconds to reach 99% (typical time is ~60 sec for a short video)
@@ -125,7 +126,15 @@ const ConfirmationPage = () => {
 
   if (!jobId || !date) {
     return (
-      <Container sx={{ mt: 4 }}>
+      <Container maxWidth="sm" sx={{ py: 8 }}>
+        <Box sx={{ mb: 4, textAlign: 'center' }}>
+          <Box
+            component="img"
+            src={logo}
+            alt="Logo"
+            sx={{ width: 200 }}
+          />
+        </Box>
         <Alert severity="error">Invalid submission. Missing job information.</Alert>
         <Button variant="contained" sx={{ mt: 2 }} onClick={() => navigate('/')}>
           Back to Calendar
@@ -137,7 +146,7 @@ const ConfirmationPage = () => {
   const getStatusDisplay = () => {
     if (isLoading && !data) {
       return {
-        icon: <CircularProgress />,
+        icon: <Spinner />,
         title: 'Initializing...',
         message: 'Starting song processing',
         color: 'info' as const,
@@ -147,7 +156,7 @@ const ConfirmationPage = () => {
     if (finalStatus === 'completed') {
       return {
         icon: <CheckCircle sx={{ fontSize: 60, color: 'success.main' }} />,
-        title: `${formatBenAMDate(new Date(date))} SUCCESS`,
+        title: `${formatBenAMDate(parseLocalDate(date))} SUCCESS`,
         message: `Song added. Ben will wake up to your selection at 7 AM`,
         color: 'success' as const,
       };
@@ -177,7 +186,7 @@ const ConfirmationPage = () => {
       : 'Waiting to start processing...';
 
     return {
-      icon: <CircularProgress size={60} />,
+      icon: <Spinner />,
       title: 'Processing song',
       message: statusText,
       color: 'info' as const,
@@ -189,6 +198,14 @@ const ConfirmationPage = () => {
 
   return (
     <Container maxWidth="sm" sx={{ py: 8 }}>
+      <Box sx={{ mb: 4, textAlign: 'center' }}>
+        <Box
+          component="img"
+          src={logo}
+          alt="Logo"
+          sx={{ width: 200 }}
+        />
+      </Box>
       <Paper sx={{ p: 4, textAlign: 'center' }}>
         <Box sx={{ mb: 3 }}>{statusDisplay.icon}</Box>
 

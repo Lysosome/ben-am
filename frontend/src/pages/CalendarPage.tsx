@@ -1,19 +1,22 @@
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
+  Fade,
   Grid,
   Card,
   CardContent,
   Typography,
-  CircularProgress,
   Alert,
   Chip,
+  Pagination,
 } from '@mui/material';
 import logo from '../img/logo_bg_anim.gif';
 import { Lock } from '@mui/icons-material';
 import { calendarApi } from '../api/client';
+import Spinner from '../components/Spinner';
 import type { CalendarEntry } from '../api/client';
 import { formatBenAMDate } from '../utils/dateFormat';
 import { AsciiArtDisplay } from '../components/AsciiArtDisplay';
@@ -21,14 +24,69 @@ import { MUSIC_NOTE_ASCII, LOCK_ASCII } from '../constants/asciiArt';
 
 const CalendarPage = () => {
   const navigate = useNavigate();
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [calendarData, setCalendarData] = useState<CalendarEntry[]>([]);
+  const ITEMS_PER_PAGE = 9;
+  const NUM_PAGES = 4;
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['calendar'],
-    queryFn: calendarApi.getCalendar,
-    refetchInterval: 5000, // Refresh every 5 seconds
-    refetchIntervalInBackground: false, // Stop refetching when tab is not visible
-    refetchOnWindowFocus: true, // Refetch when user returns to tab
+  // Initial full load (with thumbnails)
+  const { data: initialData, isLoading: isInitialLoading, error } = useQuery({
+    queryKey: ['calendar-full'],
+    queryFn: () => calendarApi.getCalendar(false),
+    refetchOnWindowFocus: false,
+    staleTime: Infinity, // Don't refetch this automatically
   });
+
+  // Lightweight polling (without thumbnails) - only runs after initial load
+  const { data: lightweightData } = useQuery({
+    queryKey: ['calendar-lightweight'],
+    queryFn: () => calendarApi.getCalendar(true),
+    enabled: !isInitialLoading && !!initialData,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+  });
+
+  // Initialize with full data on first load
+  useEffect(() => {
+    if (initialData?.calendar && calendarData.length === 0) {
+      setCalendarData(initialData.calendar);
+      setShouldAnimate(true);
+    }
+  }, [initialData, calendarData.length]);
+
+  // Update from lightweight polls: merge updates and add new entries as locked
+  useEffect(() => {
+    if (!lightweightData?.calendar) return;
+
+    setCalendarData(prev => {
+      const dateMap = new Map(prev.map(e => [e.date, e]));
+      lightweightData.calendar.forEach(entry => {
+        if (dateMap.has(entry.date)) {
+          // Merge lightweight updates (locks, etc) but keep heavy fields
+          const existing = dateMap.get(entry.date)!;
+          dateMap.set(entry.date, {
+            ...entry,
+            thumbnailURL: existing.thumbnailURL,
+            asciiThumbnail: existing.asciiThumbnail,
+          });
+        } else {
+          // New entry detected - add as locked until full refresh
+          dateMap.set(entry.date, {
+            ...entry,
+            isLocked: true,
+          });
+        }
+      });
+      return Array.from(dateMap.values());
+    });
+  }, [lightweightData]);
+
+  const handlePageChange = (_event: React.ChangeEvent<unknown>, page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleDateClick = (date: string, isAvailable: boolean, isLocked: boolean) => {
     if (isAvailable && !isLocked) {
@@ -36,17 +94,17 @@ const CalendarPage = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <Container sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-        <CircularProgress />
-      </Container>
-    );
-  }
-
   if (error) {
     return (
-      <Container sx={{ mt: 4 }}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box sx={{ mb: 4, textAlign: 'center' }}>
+          <Box
+            component="img"
+            src={logo}
+            alt="Logo"
+            sx={{ mt: 2, width: 300 }}
+          />
+        </Box>
         <Alert severity="error">
           Failed to load calendar. Please try again later.
         </Alert>
@@ -54,11 +112,11 @@ const CalendarPage = () => {
     );
   }
 
-  // Generate next 30 days (starting from today, but today is not selectable)
+  // Generate next NUM_PAGES pages (starting from today, but today is not selectable)
   const today = new Date();
   const todayString = today.toISOString().split('T')[0];
   const dates: Date[] = [];
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < ITEMS_PER_PAGE*NUM_PAGES; i++) {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
     dates.push(date);
@@ -66,7 +124,7 @@ const CalendarPage = () => {
 
   // Create lookup map: date string -> calendar entry
   const calendarMap = new Map<string, CalendarEntry>();
-  data?.calendar.forEach(entry => {
+  calendarData.forEach(entry => {
     calendarMap.set(entry.date, entry);
   });
 
@@ -81,8 +139,16 @@ const CalendarPage = () => {
         />
       </Box>
 
+      <Fade in={isInitialLoading} timeout={{ enter: 600, exit: 400 }} easing="ease-in-out" unmountOnExit>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+          <Spinner />
+        </Box>
+      </Fade>
+
+      {!isInitialLoading && (
+      <>
       <Grid container spacing={3}>
-        {dates.map((date) => {
+        {dates.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map((date, index) => {
           const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD
           const entry = calendarMap.get(dateString);
           const isToday = dateString === todayString;
@@ -91,7 +157,18 @@ const CalendarPage = () => {
           const isClickable = isAvailable && !isLocked;
 
           return (
-            <Grid item xs={12} sm={6} md={4} key={dateString}>
+            <Grid 
+              item 
+              xs={12} 
+              sm={6} 
+              md={4} 
+              key={dateString}
+              sx={{
+                opacity: shouldAnimate ? 1 : 0,
+                transition: 'opacity 0.4s ease-in-out',
+                transitionDelay: `${index * 75}ms`,
+              }}
+            >
               <Card
                 sx={{
                   height: '17.5em',
@@ -178,6 +255,18 @@ const CalendarPage = () => {
           );
         })}
       </Grid>
+      
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <Pagination 
+          count={Math.ceil(dates.length / ITEMS_PER_PAGE)} 
+          page={currentPage}
+          onChange={handlePageChange}
+          color="primary"
+          size="large"
+        />
+      </Box>
+      </>
+      )}
     </Container>
   );
 };
