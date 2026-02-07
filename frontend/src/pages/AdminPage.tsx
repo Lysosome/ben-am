@@ -60,8 +60,8 @@ const AdminPage = () => {
   });
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['calendar'],
-    queryFn: calendarApi.getCalendar,
+    queryKey: ['calendar-full'],
+    queryFn: () => calendarApi.getCalendar(false),
     refetchInterval: 30000,
   });
 
