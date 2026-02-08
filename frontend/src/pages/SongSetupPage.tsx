@@ -9,6 +9,7 @@ import {
   Typography,
   Alert,
   Paper,
+  Fade,
 } from '@mui/material';
 import Spinner from '../components/Spinner';
 import { getUserId, saveDJPreferences, getDJPreferences } from '../utils/user';
@@ -40,6 +41,7 @@ const SongSetupPage = () => {
 
   const [lockError, setLockError] = useState<string | null>(null);
   const [isLocking, setIsLocking] = useState(true);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
   const [songData, setSongData] = useState<SongData>({
     youtubeURL: '',
     songTitle: '',
@@ -64,6 +66,8 @@ const SongSetupPage = () => {
         setLockError('Failed to lock date. Please try again.');
       } finally {
         setIsLocking(false);
+        // Trigger fade-in animation after lock completes
+        setTimeout(() => setShouldAnimate(true), 50);
       }
     };
 
@@ -228,11 +232,11 @@ const SongSetupPage = () => {
         </>
       )}
 
-      {isLocking && (
+      <Fade in={isLocking} timeout={{ enter: 600, exit: 400 }} easing="ease-in-out" unmountOnExit>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
           <Spinner />
         </Box>
-      )}
+      </Fade>
 
       {lockError && (
         <>
@@ -245,12 +249,17 @@ const SongSetupPage = () => {
         </>
       )}
 
-      {!isLocking && !lockError && (<>
-
-      <Typography variant="body1" sx={{ fontWeight: 'bold'}} color='text.secondary'>
-        {`01/SONG`}
-      </Typography>
-      <Paper sx={{ p: 3, mb: 3 }}>
+      {!isLocking && !lockError && (
+        <Box
+          sx={{
+            opacity: shouldAnimate ? 1 : 0,
+            transition: 'opacity 1.0s ease-in-out',
+          }}
+        >
+          <Typography variant="body1" sx={{ fontWeight: 'bold'}} color='text.secondary'>
+            {`01/SONG`}
+          </Typography>
+          <Paper sx={{ p: 3, mb: 3 }}>
         <TextField
           fullWidth
           label="YouTube URL"
@@ -323,7 +332,8 @@ const SongSetupPage = () => {
           {submitMutation.isPending ? 'Submitting...' : 'Submit song'}
         </Button>
       </Box>
-      </> )}
+        </Box>
+      )}
     </Container>
   );
 };
