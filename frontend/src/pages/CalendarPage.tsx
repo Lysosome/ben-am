@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -21,12 +21,15 @@ import type { CalendarEntry } from '../api/client';
 import { formatBenAMDate } from '../utils/dateFormat';
 import { AsciiArtDisplay } from '../components/AsciiArtDisplay';
 import { MUSIC_NOTE_ASCII, LOCK_ASCII } from '../constants/asciiArt';
-import AsciiProgressBar from '../components/AsciiProgressBar';
 
 const CalendarPage = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [shouldAnimate, setShouldAnimate] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  
+  // Initialize page from URL query param, default to 1
+  const pageFromUrl = parseInt(searchParams.get('page') || '1', 10);
+  const [currentPage, setCurrentPage] = useState(pageFromUrl);
   const [calendarData, setCalendarData] = useState<CalendarEntry[]>([]);
   const ITEMS_PER_PAGE = 9;
   const NUM_PAGES = 4;
@@ -86,6 +89,7 @@ const CalendarPage = () => {
 
   const handlePageChange = (_event: React.ChangeEvent<unknown>, page: number) => {
     setCurrentPage(page);
+    setSearchParams({ page: page.toString() });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
