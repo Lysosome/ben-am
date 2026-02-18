@@ -21,6 +21,7 @@ import type { CalendarEntry } from '../api/client';
 import { formatBenAMDate } from '../utils/dateFormat';
 import { AsciiArtDisplay } from '../components/AsciiArtDisplay';
 import { MUSIC_NOTE_ASCII, LOCK_ASCII } from '../constants/asciiArt';
+import AsciiProgressBar from '../components/AsciiProgressBar';
 
 const CalendarPage = () => {
   const navigate = useNavigate();

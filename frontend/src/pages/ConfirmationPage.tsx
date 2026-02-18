@@ -7,15 +7,20 @@ import {
   Typography,
   Alert,
   Button,
-  LinearProgress,
   Paper,
+  Card,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
-import { CheckCircle, Error as ErrorIcon } from '@mui/icons-material';
+import { Error as ErrorIcon } from '@mui/icons-material';
 import Spinner from '../components/Spinner';
+import AsciiProgressBar from '../components/AsciiProgressBar';
 import { calendarApi } from '../api/client';
 import { getUserId } from '../utils/user';
 import { formatBenAMDate, parseLocalDate } from '../utils/dateFormat';
 import logo from '../img/logo_bg_anim.gif';
+import AsciiArtDisplay from '../components/AsciiArtDisplay';
+import { CHECK_ASCII } from '../constants/asciiArt';
 
 const TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes
 const FAKE_PROGRESS_DURATION = 60 * 1000; // 60 seconds to reach 99% (typical time is ~60 sec for a short video)
@@ -26,6 +31,8 @@ const ConfirmationPage = () => {
   const jobId = searchParams.get('jobId');
   const date = searchParams.get('date');
   const userId = getUserId();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [finalStatus, setFinalStatus] = useState<'pending' | 'completed' | 'failed' | 'timeout'>('pending');
   const [startTime] = useState(Date.now());
@@ -105,7 +112,7 @@ const ConfirmationPage = () => {
         
         return Math.round(newProgress);
       });
-    }, 500); // Update every 500ms for smooth animation
+    }, 200); // Update every 200ms for smooth animation
 
     return () => clearInterval(intervalId);
   }, [finalStatus, startTime]);
@@ -155,7 +162,15 @@ const ConfirmationPage = () => {
 
     if (finalStatus === 'completed') {
       return {
-        icon: <CheckCircle sx={{ fontSize: 60, color: 'success.main' }} />,
+        icon: <AsciiArtDisplay
+            asciiArt={CHECK_ASCII}
+            alt={'success'}
+            charactersPerLine={60}
+            pixelWidth={330}
+            enableHoverEffect
+            textColor={'#9FC38A'}
+            disableBackground
+          />,
         title: `${formatBenAMDate(parseLocalDate(date))} SUCCESS`,
         message: `Song added. Ben will wake up to your selection at 7 AM`,
         color: 'success' as const,
@@ -218,16 +233,10 @@ const ConfirmationPage = () => {
         </Typography>
 
         {statusDisplay.progress !== undefined && (
-          <Box sx={{ mb: 3 }}>
-            <LinearProgress
-              variant="determinate"
-              value={statusDisplay.progress}
-              sx={{ height: 8, borderRadius: 4 }}
-            />
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-              {statusDisplay.progress}% complete
-            </Typography>
-          </Box>
+          // Horizontally center
+          <Container sx={{ display: 'flex', justifyContent: 'center' }}>
+            <AsciiProgressBar progress={statusDisplay.progress} barWidth={isMobile ? 20 : 40} />
+          </Container>
         )}
 
         {finalStatus === 'timeout' && (
@@ -278,7 +287,7 @@ const ConfirmationPage = () => {
       </Paper>
 
       {finalStatus === 'completed' && (
-        <Alert severity="success" sx={{ mt: 3 }}>
+        <Card sx={{ mt: 3, p: 4 }}>
           <Typography variant="body2">
             <strong>What happens next?</strong>
           </Typography>
@@ -289,7 +298,7 @@ const ConfirmationPage = () => {
             <br />
             • Check your email for confirmation (if provided)
           </Typography>
-        </Alert>
+        </Card>
       )}
     </Container>
   );
