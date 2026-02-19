@@ -308,7 +308,7 @@ Terraform templates for all AWS resources:
 
 ## 🪪 License
 
-MIT License © 2025 Ben Ma
+MIT License © 2026 Ben Ma
 
 ---
 
