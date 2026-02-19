@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -31,6 +31,8 @@ const CalendarPage = () => {
   const pageFromUrl = parseInt(searchParams.get('page') || '1', 10);
   const [currentPage, setCurrentPage] = useState(pageFromUrl);
   const [calendarData, setCalendarData] = useState<CalendarEntry[]>([]);
+  const [clickedDate, setClickedDate] = useState<string | null>(null);
+  const clickTimerRef = useRef<number | null>(null);
   const ITEMS_PER_PAGE = 9;
   const NUM_PAGES = 4;
 
@@ -87,15 +89,39 @@ const CalendarPage = () => {
     });
   }, [lightweightData]);
 
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+      }
+    };
+  }, []);
+
   const handlePageChange = (_event: React.ChangeEvent<unknown>, page: number) => {
     setCurrentPage(page);
     setSearchParams({ page: page.toString() });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDateClick = (date: string, isAvailable: boolean, isLocked: boolean) => {
+  const handleDateClick = (date: string, isAvailable: boolean, isLocked: boolean, hasEntry: boolean) => {
     if (isAvailable && !isLocked) {
+      // Navigate to song setup for available dates
       navigate(`/song-setup/${date}`);
+    } else if (hasEntry && !isLocked) {
+      // Show alternate content for occupied dates
+      // Clear any existing timer
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+      }
+      
+      // Set the clicked date to trigger the fade transition
+      setClickedDate(date);
+      
+      // Reset after 8 seconds
+      clickTimerRef.current = setTimeout(() => {
+        setClickedDate(null);
+      }, 8000);
     }
   };
 
@@ -159,7 +185,9 @@ const CalendarPage = () => {
           const isToday = dateString === todayString;
           const isAvailable = !entry && !isToday; // Not available if today or has entry
           const isLocked = entry?.isLocked || false;
+          const hasEntry = !!entry && !isLocked;
           const isClickable = isAvailable && !isLocked;
+          const isShowingAlternate = clickedDate === dateString;
 
           return (
             <Grid 
@@ -177,16 +205,16 @@ const CalendarPage = () => {
               <Card
                 sx={{
                   height: '17.5em',
-                  cursor: isClickable ? 'pointer' : 'default',
+                  cursor: isClickable || hasEntry ? 'pointer' : 'default',
                   transition: 'transform 0.2s, box-shadow 0.2s',
-                  '&:hover': isClickable
+                  '&:hover': isClickable || hasEntry
                     ? {
                         transform: 'translateY(-4px)',
                         boxShadow: 4,
                       }
                     : {},
                 }}
-                onClick={() => handleDateClick(dateString, isAvailable, isLocked)}
+                onClick={() => handleDateClick(dateString, isAvailable, isLocked, hasEntry)}
               >
                 <AsciiArtDisplay
                   asciiArt={entry?.asciiThumbnail || (isAvailable ? MUSIC_NOTE_ASCII : LOCK_ASCII)}
@@ -199,62 +227,87 @@ const CalendarPage = () => {
                   disableBackground={!entry?.asciiThumbnail}
                 />
 
-                <CardContent>
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    {formatBenAMDate(date)}
-                  </Typography>
-
-                  {!isAvailable && entry && (
-                    <>
-                      <Typography variant="body1" color="text.secondary" sx={{
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                      }}>
-                        {entry.songTitle}
+                <Box sx={{ position: 'relative' }}>
+                  {/* Default CardContent */}
+                  <Fade in={!isShowingAlternate} timeout={500} unmountOnExit>
+                    <CardContent>
+                      <Typography variant="h6" color="text.secondary" gutterBottom>
+                        {formatBenAMDate(date)}
                       </Typography>
-                      { entry.djName && (
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                          sx={{ mt: 0.5 }}
-                        >
-                          DJ: {entry.djName}
-                        </Typography>
+
+                      {!isAvailable && entry && (
+                        <>
+                          <Typography variant="body1" color="text.secondary" sx={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}>
+                            {entry.songTitle}
+                          </Typography>
+                          { entry.djName && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              display="block"
+                              sx={{ mt: 0.5 }}
+                            >
+                              DJ: {entry.djName}
+                            </Typography>
+                          )}
+                        </>
                       )}
-                    </>
-                  )}
 
-                  {isLocked && (
-                    <Chip
-                      label="Locked"
-                      size="small"
-                      icon={<Lock />}
-                      color="warning"
-                      sx={{ mt: 1 }}
-                    />
-                  )}
+                      {isLocked && (
+                        <Chip
+                          label="Locked"
+                          size="small"
+                          icon={<Lock />}
+                          color="warning"
+                          sx={{ mt: 1 }}
+                        />
+                      )}
 
-                  {isToday && !entry && (
-                    <Chip
-                      label="Today"
-                      size="small"
-                      color="default"
-                      sx={{ mt: 1 }}
-                    />
-                  )}
+                      {isToday && !entry && (
+                        <Chip
+                          label="Today"
+                          size="small"
+                          color="default"
+                          sx={{ mt: 1 }}
+                        />
+                      )}
 
-                  {isAvailable && !isLocked && (
-                    <Chip
-                      label="Available"
-                      size="small"
-                      color="success"
-                      sx={{ mt: 1 }}
-                    />
+                      {isAvailable && !isLocked && (
+                        <Chip
+                          label="Available"
+                          size="small"
+                          color="success"
+                          sx={{ mt: 1 }}
+                        />
+                      )}
+                    </CardContent>
+                  </Fade>
+
+                  {/* Alternate CardContent */}
+                  {hasEntry && (
+                    <Fade in={isShowingAlternate} timeout={500} unmountOnExit>
+                      <CardContent sx={{ position: 'absolute', top: -10, left: 0, right: 0 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{
+                          textAlign: 'center',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}>
+                          On <strong>{formatBenAMDate(date)}</strong>, Ben will wake up to <strong>{entry?.songTitle}</strong>
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 2 }}>
+                          What else should he wake up to? Click an available date to choose
+                        </Typography>
+                      </CardContent>
+                    </Fade>
                   )}
-                </CardContent>
+                </Box>
               </Card>
             </Grid>
           );
