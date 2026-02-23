@@ -92,7 +92,7 @@ export const LeaveReviewIntentHandler: RequestHandler = {
       });
 
       // Ask for the review and open the mic
-      const prompt = `What's your one sentence review for today's song, ${song.songTitle}, from ${song.djName}?`;
+      const prompt = `Starting with my review is, what's your one sentence review for today's song, ${song.songTitle}, from ${song.djName}?`;
       const reprompt = 'Go ahead, tell me your review.';
 
       return handlerInput.responseBuilder
@@ -165,7 +165,7 @@ export const CaptureReviewIntentHandler: RequestHandler = {
             Html: {
               Data: `
                 <h2>You've got feedback! 🎵</h2>
-                <p>Your friend left a review for the song you picked:</p>
+                <p>Ben left a review for the song you picked:</p>
                 <p><strong>Song:</strong> ${reviewSong.songTitle}</p>
                 <p><strong>Date:</strong> ${reviewSong.date}</p>
                 <blockquote style="font-size: 18px; font-style: italic; border-left: 4px solid #1db954; padding-left: 16px; margin: 20px 0;">

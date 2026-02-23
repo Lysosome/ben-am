@@ -119,7 +119,6 @@ export const LaunchRequestHandler: RequestHandler = {
       // Use AudioPlayer to play the combined MP3 (song + DJ message + review prompt)
       // This provides better audio quality than SSML <audio> tags
       return handlerInput.responseBuilder
-        .speak(`Good morning! Here's your wake up song.`)
         .addAudioPlayerPlayDirective(
           'REPLACE_ALL',
           songUrl,

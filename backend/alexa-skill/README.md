@@ -16,7 +16,7 @@ The Ben AM Alexa Skill is the alarm component of the Ben AM wake-up music system
 
 ### Architecture
 
-\`\`\`
+```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                        AUDIO CREATION (Backend)                     │
 ├─────────────────────────────────────────────────────────────────────┤
@@ -61,11 +61,11 @@ The Ben AM Alexa Skill is the alarm component of the Ben AM wake-up music system
 │  CaptureReviewIntent ──► SES email to DJ                           │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
-\`\`\`
+```
 
 ## Project Structure
 
-\`\`\`
+```
 alexa-skill/
 ├── src/
 │   ├── index.ts                          # Main skill entry point
@@ -81,7 +81,7 @@ alexa-skill/
 ├── package.json                          # Dependencies
 ├── tsconfig.json                         # TypeScript configuration
 └── README.md                             # This file
-\`\`\`
+```
 
 ## Handler Responsibilities
 
@@ -124,7 +124,7 @@ Go to **Build** → **Intents** → **Add Intent**:
 
 - **Intent Name**: \`LeaveReviewIntent\`
 - **Sample Utterances**:
-  \`\`\`
+  ```
   leave a review
   leave review
   leave a message
@@ -133,7 +133,7 @@ Go to **Build** → **Intents** → **Add Intent**:
   give feedback
   send feedback
   leave feedback
-  \`\`\`
+  ```
 
 #### 2. Add CaptureReviewIntent with Slot
 
@@ -144,9 +144,9 @@ Go to **Build** → **Intents** → **Add Intent**:
   - Name: \`reviewText\`
   - Type: \`AMAZON.SearchQuery\`
 - **Sample Utterances**:
-  \`\`\`
+  ```
   {reviewText}
-  \`\`\`
+  ```
 
 #### 3. Save and Build
 
@@ -158,7 +158,7 @@ Go to **Build** → **Intents** → **Add Intent**:
 
 You can also replace the entire model via **JSON Editor**:
 
-\`\`\`json
+```json
 {
   "interactionModel": {
     "languageModel": {
@@ -217,7 +217,7 @@ You can also replace the entire model via **JSON Editor**:
     }
   }
 }
-\`\`\`
+```
 
 ### Endpoint Configuration
 
@@ -240,17 +240,17 @@ You can also replace the entire model via **JSON Editor**:
 You can't run Alexa skills fully locally, but you can test the Lambda logic:
 
 1. **Build the skill**:
-   \`\`\`bash
+   ```bash
    cd backend/alexa-skill
    npm install
    npm run build
-   \`\`\`
+   ```
 
 2. **Test Lambda handler locally** (using AWS SAM Local):
-   \`\`\`bash
+   ```bash
    cd ../../  # Back to project root
    sam local invoke AlexaSkillFunction -e backend/alexa-skill/test-events/launch-request.json
-   \`\`\`
+   ```
 
 3. **Use Alexa Developer Console Test Simulator**:
    - Go to https://developer.amazon.com/alexa/console/ask
@@ -266,22 +266,22 @@ You can't run Alexa skills fully locally, but you can test the Lambda logic:
 
 1. **Make code changes** in \`backend/alexa-skill/src/\`
 2. **Build TypeScript**:
-   \`\`\`bash
+   ```bash
    npm run build
-   \`\`\`
+   ```
 3. **Deploy to Lambda** (staging):
-   \`\`\`bash
+   ```bash
    cd ../../infra
    terraform workspace select staging
    terraform apply -target=aws_lambda_function.alexa_skill -auto-approve
-   \`\`\`
+   ```
 4. **Test immediately** in Alexa Developer Console
    - No need to redeploy the skill interaction model unless you change intents/slots
    - Lambda code updates are instant
 5. **Check CloudWatch Logs**:
-   \`\`\`bash
+   ```bash
    aws logs tail /aws/lambda/ben-am-staging-alexa-skill --follow
-   \`\`\`
+   ```
 
 **When to update Alexa Developer Console:**
 - When you add new intents (like \`LeaveReviewIntent\`, \`CaptureReviewIntent\`)
@@ -293,25 +293,25 @@ You can't run Alexa skills fully locally, but you can test the Lambda logic:
 
 ### To Staging
 
-\`\`\`bash
+```bash
 cd backend/alexa-skill
 npm run build
 
 cd ../../infra
 terraform workspace select staging
 terraform apply -target=aws_lambda_function.alexa_skill -auto-approve
-\`\`\`
+```
 
 ### To Production
 
-\`\`\`bash
+```bash
 cd backend/alexa-skill
 npm run build
 
 cd ../../infra
 terraform workspace select default
 terraform apply -target=aws_lambda_function.alexa_skill -auto-approve
-\`\`\`
+```
 
 **Post-deployment steps:**
 1. Update interaction model in Alexa Developer Console (if intents changed)
