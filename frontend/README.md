@@ -63,17 +63,60 @@ The app will be available at `http://localhost:5173`.
 
 ### API Configuration
 
-During development, the Vite dev server proxies `/api` requests to the backend API Gateway. No additional configuration is needed.
+During development, the Vite dev server proxies `/api` requests to the backend API Gateway. Configure the backend URL using environment files.
 
-For production builds, set the `VITE_API_URL` environment variable to your API Gateway endpoint:
+### Environment Files
 
+Vite loads environment files based on the `--mode` flag:
+
+**File Priority (highest to lowest):**
+1. `.env.[mode].local` (e.g., `.env.staging.local`)
+2. `.env.[mode]` (e.g., `.env.staging`)
+3. `.env.local` (only when no mode specified)
+4. `.env`
+
+**Available environment files:**
+- `.env.local` - Local development (default for `npm run dev`)
+- `.env.staging` - Staging environment
+- `.env.production` - Production environment
+
+**Configuration:**
 ```bash
-VITE_API_URL=https://your-api-gateway.execute-api.us-east-1.amazonaws.com/prod
+# .env.local (local development)
+VITE_API_URL=http://localhost:3000
+
+# .env.staging (staging deployment)
+VITE_API_URL=https://staging-api.yourdomain.com
+
+# .env.production (production deployment)
+VITE_API_URL=https://api.yourdomain.com
 ```
+
+**Important:** When building with `--mode staging`, Vite will:
+- ✅ Load `.env.staging`
+- ❌ Ignore `.env.local` (local overrides don't apply)
+- ❌ Ignore `.env.production`
 
 ## Building for Production
 
+### Development Build (uses .env.local)
 ```bash
+npm run dev
+# or for staging mode in dev:
+npm run dev:staging
+```
+
+### Production Build
+
+**Staging:**
+```bash
+npm run build:staging  # Uses .env.staging
+```
+
+**Production:**
+```bash
+npm run build:production  # Uses .env.production
+# or just:
 npm run build
 ```
 
@@ -83,11 +126,32 @@ The production build will be output to the `dist/` directory.
 
 The frontend is deployed to an S3 bucket configured for static website hosting, with CloudFront as the CDN.
 
-### Deploy to S3
+### Automated Deployment
+
+Use the root-level `deploy.sh` script for environment-specific deployments:
 
 ```bash
-# Build the frontend
-npm run build
+# Deploy to staging (uses .env.staging)
+./deploy.sh staging
+
+# Deploy to production (uses .env.production)
+./deploy.sh production
+```
+
+This script will:
+1. Build the frontend with the correct environment mode
+2. Select the appropriate Terraform workspace
+3. Deploy infrastructure with Terraform
+4. Sync built files to S3
+5. Invalidate CloudFront cache
+
+### Manual Deploy to S3
+
+If you need to deploy manually:
+
+```bash
+# Build for specific environment
+npm run build:staging  # or build:production
 
 # Sync to S3 (replace with your bucket name)
 aws s3 sync dist/ s3://ben-am-frontend-bucket --delete
@@ -181,7 +245,10 @@ Audio recording requires microphone permissions:
 
 ## Scripts
 
-- `npm run dev` - Start Vite development server
-- `npm run build` - Build for production (TypeScript + Vite)
+- `npm run dev` - Start Vite development server (uses `.env.local`)
+- `npm run dev:staging` - Start dev server with staging environment (uses `.env.staging`)
+- `npm run build` - Build for production (uses `.env.production`)
+- `npm run build:staging` - Build for staging environment (uses `.env.staging`)
+- `npm run build:production` - Build for production environment (uses `.env.production`)
 - `npm run preview` - Preview production build locally
 - `npm run lint` - Run ESLint on TypeScript/TSX files

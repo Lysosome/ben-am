@@ -3,8 +3,11 @@
 
 set -e  # Exit on error
 
+# Parse environment argument (default to production)
+ENVIRONMENT="${1:-production}"
+
 echo "════════════════════════════════════════════════════════════"
-echo "  Ben AM Deployment Script"
+echo "  Ben AM Deployment Script - ${ENVIRONMENT^^}"
 echo "════════════════════════════════════════════════════════════"
 echo ""
 
@@ -31,9 +34,10 @@ echo -e "${GREEN}[2/6] Building backend Lambda functions...${NC}"
 npm run build:backend
 
 # Step 3: Deploy infrastructure with Terraform
-echo -e "${GREEN}[3/6] Deploying AWS infrastructure...${NC}"
+echo -e "${GREEN}[3/6] Deploying AWS infrastructure (${ENVIRONMENT})...${NC}"
 cd infra
 terraform init
+terraform workspace select "${ENVIRONMENT}" || terraform workspace new "${ENVIRONMENT}"
 terraform apply
 
 # Capture outputs
@@ -45,13 +49,18 @@ CLOUDFRONT_URL=$(terraform output -raw cloudfront_url)
 cd ..
 
 # Step 4: Build frontend
-echo -e "${GREEN}[4/6] Building frontend...${NC}"
+echo -e "${GREEN}[4/6] Building frontend (${ENVIRONMENT} mode)...${NC}"
 cd frontend
 
-# Update API URL in frontend config if needed
-# TODO: Add environment variable or config file update here
+# Build with appropriate mode (uses .env.${ENVIRONMENT})
+if [ "${ENVIRONMENT}" = "staging" ]; then
+  npm run build:staging
+elif [ "${ENVIRONMENT}" = "production" ]; then
+  npm run build:production
+else
+  npm run build
+fi
 
-npm run build
 cd ..
 
 # Step 5: Deploy frontend to S3
