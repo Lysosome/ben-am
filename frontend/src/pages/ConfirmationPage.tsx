@@ -42,12 +42,12 @@ const ConfirmationPage = () => {
     mutationFn: () => calendarApi.cancelSubmission({ date: date!, userId }),
     onSuccess: () => {
       console.log('Submission cancelled');
-      navigate('/');
+      navigate('/', { state: { refetchFull: true } });
     },
     onError: (error) => {
       console.error('Failed to cancel submission:', error);
       // Still navigate back even if cancel fails
-      navigate('/');
+      navigate('/', { state: { refetchFull: true } });
     },
   });
 
@@ -143,7 +143,7 @@ const ConfirmationPage = () => {
           />
         </Box>
         <Alert severity="error">Invalid submission. Missing job information.</Alert>
-        <Button variant="contained" sx={{ mt: 2 }} onClick={() => navigate('/')}>
+        <Button variant="contained" sx={{ mt: 2 }} onClick={() => navigate('/', { state: { refetchFull: true } })}>
           Back to Calendar
         </Button>
       </Container>
@@ -243,7 +243,7 @@ const ConfirmationPage = () => {
           <Button
             variant="contained"
             size="large"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/', { state: { refetchFull: true } })}
             fullWidth
           >
             Back to calendar
@@ -278,7 +278,7 @@ const ConfirmationPage = () => {
           <Button
             variant="contained"
             size="large"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/', { state: { refetchFull: true } })}
             fullWidth
           >
             Back to calendar

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -25,6 +25,8 @@ import { MUSIC_NOTE_ASCII, LOCK_ASCII } from '../constants/asciiArt';
 const CalendarPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const queryClient = useQueryClient();
   const [shouldAnimate, setShouldAnimate] = useState(false);
   
   // Initialize page from URL query param, default to 1
@@ -53,6 +55,16 @@ const CalendarPage = () => {
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
   });
+
+  // Check if we need to refetch full calendar (e.g., after submission)
+  useEffect(() => {
+    const state = location.state as { refetchFull?: boolean };
+    if (state?.refetchFull) {
+      queryClient.invalidateQueries({ queryKey: ['calendar-full'] });
+      // Clear the state so it doesn't refetch on every render
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, queryClient]);
 
   // Initialize with full data on first load
   useEffect(() => {
