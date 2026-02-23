@@ -66,31 +66,56 @@ const CalendarPage = () => {
     }
   }, [location.state, queryClient]);
 
-  // Initialize with full data on first load
+  // Update with full data: merge in ASCII art when it becomes available
   useEffect(() => {
-    if (initialData?.calendar && calendarData.length === 0) {
-      setCalendarData(initialData.calendar);
-      setShouldAnimate(true);
-    }
-  }, [initialData, calendarData.length]);
+    if (!initialData?.calendar) return;
 
-  // Update from lightweight polls: merge updates and add new entries as locked
+    setCalendarData(prev => {
+      // If this is the first load, just use the full data
+      if (prev.length === 0) {
+        setShouldAnimate(true);
+        return initialData.calendar;
+      }
+
+      // Otherwise, merge: if new data has ASCII art that we don't have, use it
+      const dateMap = new Map(prev.map(e => [e.date, e]));
+      initialData.calendar.forEach(newEntry => {
+        const existing = dateMap.get(newEntry.date);
+        if (existing) {
+          // If existing has no ASCII but new data does, update it
+          if (!existing.asciiThumbnail && newEntry.asciiThumbnail) {
+            dateMap.set(newEntry.date, newEntry);
+          }
+        } else {
+          // New entry from full data
+          dateMap.set(newEntry.date, newEntry);
+        }
+      });
+      return Array.from(dateMap.values());
+    });
+  }, [initialData]);
+
+  // Update from lightweight polls: never overwrite ASCII art
   useEffect(() => {
     if (!lightweightData?.calendar) return;
 
     setCalendarData(prev => {
       const dateMap = new Map(prev.map(e => [e.date, e]));
       lightweightData.calendar.forEach(entry => {
-        if (dateMap.has(entry.date)) {
-          // Merge lightweight updates (locks, etc) but keep heavy fields
-          const existing = dateMap.get(entry.date)!;
-          dateMap.set(entry.date, {
-            ...entry,
-            thumbnailURL: existing.thumbnailURL,
-            asciiThumbnail: existing.asciiThumbnail,
-          });
+        const existing = dateMap.get(entry.date);
+        if (existing) {
+          // If existing has ASCII art, keep it and only update lock status
+          if (existing.asciiThumbnail) {
+            dateMap.set(entry.date, {
+              ...existing,
+              isLocked: entry.isLocked,
+            });
+          } else {
+            // No ASCII art yet, use lightweight data
+            dateMap.set(entry.date, entry);
+          }
         } else {
-          // New entry detected - add as locked until full refresh
+          // New entry - add as locked until full refresh provides ASCII
           dateMap.set(entry.date, {
             ...entry,
             isLocked: true,
