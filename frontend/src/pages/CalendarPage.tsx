@@ -32,6 +32,7 @@ const CalendarPage = () => {
   // Initialize page from URL query param, default to 1
   const pageFromUrl = parseInt(searchParams.get('page') || '1', 10);
   const [currentPage, setCurrentPage] = useState(pageFromUrl);
+  const isHidden = searchParams.has('hidden');
   const [calendarData, setCalendarData] = useState<CalendarEntry[]>([]);
   const [clickedDate, setClickedDate] = useState<string | null>(null);
   const clickTimerRef = useRef<number | null>(null);
@@ -137,8 +138,14 @@ const CalendarPage = () => {
 
   const handlePageChange = (_event: React.ChangeEvent<unknown>, page: number) => {
     setCurrentPage(page);
-    setSearchParams({ page: page.toString() });
+    const newParams: Record<string, string> = { page: page.toString() };
+    if (isHidden) newParams.hidden = '';
+    setSearchParams(newParams);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const getDisplayTitle = (title: string) => {
+    return isHidden ? '🔒 Hidden Song' : title;
   };
 
   const handleDateClick = (date: string, isAvailable: boolean, isLocked: boolean, hasEntry: boolean) => {
@@ -280,7 +287,7 @@ const CalendarPage = () => {
                             WebkitBoxOrient: 'vertical',
                             overflow: 'hidden',
                           }}>
-                            {entry.songTitle}
+                            {getDisplayTitle(entry.songTitle)}
                           </Typography>
                           { entry.djName && (
                             <Typography
@@ -336,7 +343,7 @@ const CalendarPage = () => {
                           WebkitBoxOrient: 'vertical',
                           overflow: 'hidden',
                         }}>
-                          On <strong>{formatBenAMDate(date)}</strong>, Ben will wake up to <strong>{entry?.songTitle}</strong>
+                          On <strong>{formatBenAMDate(date)}</strong>, Ben will wake up to <strong>{getDisplayTitle(entry?.songTitle || '')}</strong>
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 2 }}>
                           What else should he wake up to? Click an available date to choose

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Container,
@@ -39,6 +40,8 @@ interface DialogState {
 
 const AdminPage = () => {
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const isHidden = searchParams.has('hidden');
   const [dialogState, setDialogState] = useState<DialogState>({
     open: false,
     action: null,
@@ -218,6 +221,10 @@ const AdminPage = () => {
     return date >= today;
   };
 
+  const getDisplayTitle = (title: string) => {
+    return isHidden ? '🔒 Hidden Song' : title;
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       {renderHeader()}
@@ -315,7 +322,7 @@ const AdminPage = () => {
                     ) : (
                       <>
                         <Typography variant="body2" noWrap sx={{ mb: 0.5 }}>
-                          {entry.songTitle}
+                          {getDisplayTitle(entry.songTitle)}
                         </Typography>
                         <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
                           DJ: {entry.djName}
