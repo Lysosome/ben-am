@@ -1,7 +1,7 @@
 import { HandlerInput, RequestHandler } from 'ask-sdk-core';
 import { Response, IntentRequest } from 'ask-sdk-model';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 
 const ddbClient = new DynamoDBClient({});
@@ -46,30 +46,12 @@ export const LeaveReviewIntentHandler: RequestHandler = {
         },
       }));
 
-      let song: SongEntry | undefined = result.Items?.[0] as SongEntry;
+      const song: SongEntry | undefined = result.Items?.[0] as SongEntry;
 
-      // If no song for today, try to find the most recent song with an email
-      if (!song || !song.friendEmail) {
-        console.log('No song with email for today, scanning for recent songs...');
-        const scanResult = await docClient.send(new ScanCommand({
-          TableName: TABLE_NAME,
-          FilterExpression: 'begins_with(PK, :prefix) AND attribute_exists(friendEmail)',
-          ExpressionAttributeValues: {
-            ':prefix': 'SONG#',
-          },
-        }));
-
-        const songs = (scanResult.Items as SongEntry[])?.filter(s => s.friendEmail);
-        if (songs && songs.length > 0) {
-          // Sort by date descending and get most recent
-          songs.sort((a, b) => b.date.localeCompare(a.date));
-          song = songs[0];
-        }
-      }
-
-      if (!song || !song.friendEmail) {
+      // If no song for today, just end
+      if (!song) {
         return handlerInput.responseBuilder
-          .speak('Sorry, there\'s no song available to review right now. The DJ didn\'t leave their email address.')
+          .speak('Sorry, there\'s no song for today to review.')
           .withShouldEndSession(true)
           .getResponse();
       }
@@ -129,7 +111,7 @@ export const CaptureReviewIntentHandler: RequestHandler = {
       const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
       const reviewSong = sessionAttributes.reviewSong;
 
-      if (!reviewSong || !reviewSong.friendEmail) {
+      if (!reviewSong) {
         return handlerInput.responseBuilder
           .speak('Sorry, I lost track of which song you\'re reviewing. Please try saying "leave a review" again.')
           .withShouldEndSession(true)
@@ -149,42 +131,63 @@ export const CaptureReviewIntentHandler: RequestHandler = {
       }
 
       console.log('Review captured:', reviewText);
-      console.log('Sending to:', reviewSong.friendEmail);
 
-      // Send email to the DJ
-      await sesClient.send(new SendEmailCommand({
-        Source: SES_EMAIL_SENDER,
-        Destination: {
-          ToAddresses: [reviewSong.friendEmail],
+      // Save review to DynamoDB
+      await docClient.send(new UpdateCommand({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: `SONG#${reviewSong.date}`,
         },
-        Message: {
-          Subject: {
-            Data: `Review for your wake-up song: ${reviewSong.songTitle}`,
-          },
-          Body: {
-            Html: {
-              Data: `
-                <h2>You've got feedback! 🎵</h2>
-                <p>Ben left a review for the song you picked:</p>
-                <p><strong>Song:</strong> ${reviewSong.songTitle}</p>
-                <p><strong>Date:</strong> ${reviewSong.date}</p>
-                <blockquote style="font-size: 18px; font-style: italic; border-left: 4px solid #1db954; padding-left: 16px; margin: 20px 0;">
-                  "${reviewText}"
-                </blockquote>
-                <p>Thanks for being an awesome DJ! 🎧</p>
-              `,
-            },
-            Text: {
-              Data: `You've got feedback!\n\nYour friend left a review for: ${reviewSong.songTitle}\nDate: ${reviewSong.date}\n\nReview: "${reviewText}"\n\nThanks for being an awesome DJ!`,
-            },
-          },
+        UpdateExpression: 'SET review = :review',
+        ExpressionAttributeValues: {
+          ':review': reviewText,
         },
       }));
 
-      console.log('Review email sent successfully');
+      console.log('Review saved to DynamoDB');
+
+      // Send email to the DJ if they provided an email
+      let emailSent = false;
+      if (reviewSong.friendEmail) {
+        console.log('Sending email to:', reviewSong.friendEmail);
+        await sesClient.send(new SendEmailCommand({
+          Source: SES_EMAIL_SENDER,
+          Destination: {
+            ToAddresses: [reviewSong.friendEmail],
+          },
+          Message: {
+            Subject: {
+              Data: `Review for your wake-up song: ${reviewSong.songTitle}`,
+            },
+            Body: {
+              Html: {
+                Data: `
+                  <h2>You've got feedback! 🎵</h2>
+                  <p>Ben left a review for the song you picked:</p>
+                  <p><strong>Song:</strong> ${reviewSong.songTitle}</p>
+                  <p><strong>Date:</strong> ${reviewSong.date}</p>
+                  <blockquote style="font-size: 18px; font-style: italic; border-left: 4px solid #1db954; padding-left: 16px; margin: 20px 0;">
+                    "${reviewText}"
+                  </blockquote>
+                  <p>Thanks for being an awesome DJ! 🎧</p>
+                `,
+              },
+              Text: {
+                Data: `You've got feedback!\n\nYour friend left a review for: ${reviewSong.songTitle}\nDate: ${reviewSong.date}\n\nReview: "${reviewText}"\n\nThanks for being an awesome DJ!`,
+              },
+            },
+          },
+        }));
+        emailSent = true;
+        console.log('Review email sent successfully');
+      }
+
+      const responseMessage = emailSent 
+        ? `Thanks! Your review has been sent to ${reviewSong.djName}. Have a great day!`
+        : 'Thanks! Your review has been saved. Have a great day!';
 
       return handlerInput.responseBuilder
-        .speak(`Thanks! Your review has been sent to ${reviewSong.djName}. Have a great day!`)
+        .speak(responseMessage)
         .withShouldEndSession(true)
         .getResponse();
 

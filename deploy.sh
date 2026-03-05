@@ -38,7 +38,7 @@ echo -e "${GREEN}[3/6] Deploying AWS infrastructure (${ENVIRONMENT})...${NC}"
 cd infra
 terraform init
 terraform workspace select "${ENVIRONMENT}" || terraform workspace new "${ENVIRONMENT}"
-terraform apply
+terraform apply -var-file="terraform.${ENVIRONMENT}.tfvars"
 
 # Capture outputs
 FRONTEND_BUCKET=$(terraform output -raw frontend_bucket_name)

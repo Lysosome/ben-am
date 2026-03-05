@@ -28,13 +28,14 @@ resource "aws_iam_role_policy" "alexa_skill_lambda" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      # Read from DynamoDB
+      # Read and update DynamoDB
       {
         Effect = "Allow"
         Action = [
           "dynamodb:GetItem",
           "dynamodb:Query",
-          "dynamodb:Scan"
+          "dynamodb:Scan",
+          "dynamodb:UpdateItem"
         ]
         Resource = aws_dynamodb_table.calendar.arn
       },
