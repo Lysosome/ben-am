@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   Box,
+  Button,
   Container,
   Fade,
   Grid,
@@ -13,8 +14,8 @@ import {
   Chip,
   Pagination,
 } from '@mui/material';
-import logo from '../img/logo_bg_anim.gif';
 import { Lock } from '@mui/icons-material';
+import logo from '../img/logo_bg_anim.gif';
 import { calendarApi } from '../api/client';
 import Spinner from '../components/Spinner';
 import type { CalendarEntry } from '../api/client';
@@ -35,7 +36,10 @@ const CalendarPage = () => {
   const isHidden = searchParams.has('hidden');
   const [calendarData, setCalendarData] = useState<CalendarEntry[]>([]);
   const [clickedDate, setClickedDate] = useState<string | null>(null);
+  const [scrollToDate, setScrollToDate] = useState<string | null>(null);
+  const [foundDateLabel, setFoundDateLabel] = useState<string | null>(null);
   const clickTimerRef = useRef<number | null>(null);
+  const foundDateTimerRef = useRef<number | null>(null);
   const ITEMS_PER_PAGE = 9;
   const NUM_PAGES = 4;
 
@@ -133,8 +137,49 @@ const CalendarPage = () => {
       if (clickTimerRef.current) {
         clearTimeout(clickTimerRef.current);
       }
+      if (foundDateTimerRef.current) {
+        clearTimeout(foundDateTimerRef.current);
+      }
     };
   }, []);
+
+  // Scroll to a specific date card after page change
+  useEffect(() => {
+    if (!scrollToDate) return;
+    const timeout = setTimeout(() => {
+      const el = document.getElementById(`date-${scrollToDate}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      setScrollToDate(null);
+    }, 100);
+    return () => clearTimeout(timeout);
+  }, [scrollToDate, currentPage]);
+
+  const handleJumpToNextAvailable = () => {
+    for (let i = 0; i < dates.length; i++) {
+      const dateString = dates[i].toISOString().split('T')[0];
+      const entry = calendarMap.get(dateString);
+      const isToday = dateString === todayString;
+      const isLocked = entry?.isLocked || false;
+      const isAvailable = !entry && !isToday;
+      if (isAvailable && !isLocked) {
+        const targetPage = Math.floor(i / ITEMS_PER_PAGE) + 1;
+        if (targetPage !== currentPage) {
+          setCurrentPage(targetPage);
+          const newParams: Record<string, string> = { page: targetPage.toString() };
+          if (isHidden) newParams.hidden = '';
+          setSearchParams(newParams);
+        }
+        setScrollToDate(dateString);
+        // Show the found date label for 5 seconds
+        if (foundDateTimerRef.current) clearTimeout(foundDateTimerRef.current);
+        setFoundDateLabel(formatBenAMDate(dates[i]));
+        foundDateTimerRef.current = setTimeout(() => setFoundDateLabel(null), 5000);
+        return;
+      }
+    }
+  };
 
   const handlePageChange = (_event: React.ChangeEvent<unknown>, page: number) => {
     setCurrentPage(page);
@@ -177,7 +222,7 @@ const CalendarPage = () => {
             component="img"
             src={logo}
             alt="Logo"
-            sx={{ mt: 2, width: 300 }}
+            sx={{ mt: 2, width: { xs: 250, sm: 300 } }}
           />
         </Box>
         <Alert severity="error">
@@ -210,8 +255,53 @@ const CalendarPage = () => {
           component="img"
           src={logo}
           alt="Logo"
-          sx={{ mt: 2, width: 300 }}
+          sx={{ mt: 2, width: { xs: 250, sm: 300 } }}
         />
+      </Box>
+
+      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mb: 3 }}>
+        <Button
+          variant="outlined"
+          size="small"
+          color="secondary"
+          onClick={handleJumpToNextAvailable}
+          disabled={isInitialLoading || calendarData.length === 0}
+          sx={{ fontSize: '1rem', py: 0.25, px: 1, minWidth: 210, overflow: 'hidden', position: 'relative' }}
+        >
+          <Box
+            component="span"
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: foundDateLabel ? 1 : 0,
+              transition: 'opacity 0.4s ease',
+              pointerEvents: 'none',
+            }}
+          >
+            {foundDateLabel}
+          </Box>
+          <Box
+            component="span"
+            sx={{
+              opacity: foundDateLabel ? 0 : 1,
+              transition: 'opacity 0.4s ease',
+            }}
+          >
+            Find next available date
+          </Box>
+        </Button>
+        <Button
+          variant="outlined"
+          size="small"
+          color="secondary"
+          onClick={() => navigate('/archive')}
+          sx={{ fontSize: '1rem', py: 0.25, px: 1 }}
+        >
+          Explore the archive
+        </Button>
       </Box>
 
       <Fade in={isInitialLoading} timeout={{ enter: 600, exit: 400 }} easing="ease-in-out" unmountOnExit>
@@ -240,6 +330,7 @@ const CalendarPage = () => {
               sm={6} 
               md={4} 
               key={dateString}
+              id={`date-${dateString}`}
               sx={{
                 opacity: shouldAnimate ? 1 : 0,
                 transition: 'opacity 0.4s ease-in-out',

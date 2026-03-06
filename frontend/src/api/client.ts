@@ -32,6 +32,7 @@ export interface CalendarEntry {
   isAvailable: boolean;
   isLocked?: boolean;
   lockedBy?: string;
+  review?: string;
 }
 
 export interface LockDateResponse {

@@ -18,6 +18,7 @@ interface SongEntry {
   thumbnailS3Key?: string;
   asciiThumbnail?: string;
   djName: string;
+  review?: string;
 }
 
 interface LockEntry {
@@ -35,6 +36,7 @@ interface CalendarEntry {
   isAvailable: boolean;
   isLocked?: boolean;
   lockedBy?: string;
+  review?: string;
 }
 
 /**
@@ -110,6 +112,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
         asciiThumbnail,
         djName: song.djName,
         isAvailable: false,
+        review: song.review,
       });
     }
 
