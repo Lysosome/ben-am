@@ -134,7 +134,7 @@ resource "aws_lambda_function" "youtube_dl" {
   
   # Lambda layers for yt-dlp, ffmpeg, cookies, and ascii-image-converter binaries
   layers = [
-    "arn:aws:lambda:us-east-1:668596205778:layer:yt-dlp-binary:7",
+    "arn:aws:lambda:us-east-1:668596205778:layer:yt-dlp-binary:8",
     "arn:aws:lambda:us-east-1:668596205778:layer:ffmpeg-binary:1",
     "arn:aws:lambda:us-east-1:668596205778:layer:youtube-cookies:7",
     "arn:aws:lambda:us-east-1:668596205778:layer:ascii-image-converter:1"
