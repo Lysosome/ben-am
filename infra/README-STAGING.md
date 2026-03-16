@@ -29,8 +29,8 @@ terraform apply -var-file=terraform.staging.tfvars
 ### To work with production:
 ```bash
 cd infra
-terraform workspace select default
-terraform apply -var-file=terraform.tfvars
+terraform workspace select production
+terraform apply -var-file=terraform.production.tfvars
 ```
 
 ### To check current workspace:
